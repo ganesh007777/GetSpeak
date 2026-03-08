@@ -30,14 +30,15 @@ function maskDbUrl(url: string) {
 }
 
 export default async function AdminPage() {
-  const [
-    users,
-    posts,
-    totalUsers,
-    totalPosts,
-    publishedPosts,
-    adminCount,
-  ] = await Promise.all([
+  let users: any[] = []
+let posts: any[] = []
+let totalUsers = 0
+let totalPosts = 0
+let publishedPosts = 0
+let adminCount = 0
+
+try {
+  const result = await Promise.all([
     db.user.findMany({ orderBy: { createdAt: "desc" }, take: 50 }),
     db.post.findMany({ orderBy: { createdAt: "desc" }, take: 50 }),
     db.user.count(),
@@ -45,6 +46,17 @@ export default async function AdminPage() {
     db.post.count({ where: { published: true } }),
     db.user.count({ where: { role: "ADMIN" } }),
   ])
+
+  users = result[0]
+  posts = result[1]
+  totalUsers = result[2]
+  totalPosts = result[3]
+  publishedPosts = result[4]
+  adminCount = result[5]
+
+} catch (error) {
+  console.error("Database error:", error)
+}
 
   const usersById = new Map(users.map((user) => [user.id, user]))
   const admins = users.filter((user) => user.role === "ADMIN")
