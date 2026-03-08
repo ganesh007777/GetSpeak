@@ -1,0 +1,1565 @@
+﻿<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Get Speak</title>
+    <meta name="description" content="Get Speak - Connect with people around the world instantly" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+    <style>
+
+  :root {
+    --primary-color: #6a11cb;
+    --secondary-color: #2575fc;
+    --accent-color: #ff3366;
+    --text-color: #333;
+    --bg-color: #f8f9fa;
+    --card-bg: #ffffff;
+    --border-color: #e0e0e0;
+    --shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  }
+
+  [data-theme="dark"] {
+    --primary-color: #8e44ad;
+    --secondary-color: #3498db;
+    --accent-color: #e74c3c;
+    --text-color: #f8f9fa;
+    --bg-color: #121212;
+    --card-bg: #1e1e1e;
+    --border-color: #333333;
+    --shadow: 0 4px 6px rgba(0, 0, 0, 0.5);
+  }
+
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  }
+
+  body {
+    background-color: var(--bg-color);
+    color: var(--text-color);
+    transition: all 0.3s ease;
+    overflow-x: hidden;
+  }
+
+  .navbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem 5%;
+    background-color: var(--card-bg);
+    box-shadow: var(--shadow);
+    position: fixed;
+    width: 100%;
+    top: 0;
+    z-index: 1000;
+    transition: all 0.3s ease;
+  }
+
+  .logo {
+    font-size: 2rem;
+    font-weight: bold;
+    background: linear-gradient(45deg, var(--primary-color), var(--secondary-color), var(--accent-color));
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    animation: colorChange 5s infinite alternate;
+  }
+
+  @keyframes colorChange {
+    0% { background: linear-gradient(45deg, var(--primary-color), var(--secondary-color), var(--accent-color)); -webkit-background-clip: text; background-clip: text; }
+    25% { background: linear-gradient(45deg, var(--accent-color), var(--primary-color), var(--secondary-color)); -webkit-background-clip: text; background-clip: text; }
+    50% { background: linear-gradient(45deg, var(--secondary-color), var(--accent-color), var(--primary-color)); -webkit-background-clip: text; background-clip: text; }
+    75% { background: linear-gradient(45deg, var(--primary-color), var(--accent-color), var(--secondary-color)); -webkit-background-clip: text; background-clip: text; }
+    100% { background: linear-gradient(45deg, var(--secondary-color), var(--primary-color), var(--accent-color)); -webkit-background-clip: text; background-clip: text; }
+  }
+
+  .nav-links {
+    display: flex;
+    list-style: none;
+    gap: 0.5rem;
+  }
+
+  .nav-links li a {
+    color: var(--text-color);
+    text-decoration: none;
+    font-weight: 500;
+    transition: all 0.3s ease;
+    position: relative;
+    padding: 0.5rem 1rem;
+    border-radius: 8px;
+  }
+
+  .nav-links li a:hover,
+  .nav-links li a.active {
+    color: var(--primary-color);
+    background-color: rgba(106, 17, 203, 0.1);
+  }
+
+  .nav-links li a::after {
+    content: '';
+    position: absolute;
+    width: 0;
+    height: 2px;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: var(--primary-color);
+    transition: width 0.3s ease;
+  }
+
+  .nav-links li a:hover::after,
+  .nav-links li a.active::after {
+    width: 60%;
+  }
+
+  .theme-toggle {
+    display: flex;
+    align-items: center;
+  }
+
+  .switch {
+    font-size: 17px;
+    position: relative;
+    display: inline-block;
+    width: 3.5em;
+    height: 2em;
+    transform-style: preserve-3d;
+    perspective: 500px;
+    animation: toggle__animation 3s infinite;
+  }
+
+  .switch::before {
+    content: "";
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    left: 0;
+    top: 0;
+    filter: blur(20px);
+    z-index: -1;
+    border-radius: 50px;
+    background-color: #d8ff99;
+    background-image: radial-gradient(at 21% 46%, hsla(183,65%,60%,1) 0px, transparent 50%),
+      radial-gradient(at 23% 25%, hsla(359,74%,70%,1) 0px, transparent 50%),
+      radial-gradient(at 20% 1%, hsla(267,83%,75%,1) 0px, transparent 50%),
+      radial-gradient(at 86% 87%, hsla(204,69%,68%,1) 0px, transparent 50%),
+      radial-gradient(at 99% 41%, hsla(171,72%,77%,1) 0px, transparent 50%),
+      radial-gradient(at 55% 24%, hsla(138,60%,62%,1) 0px, transparent 50%);
+  }
+
+  .switch input { opacity: 0; width: 0; height: 0; }
+
+  .slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #fdfefedc;
+    transition: .4s;
+    border-radius: 30px;
+  }
+
+  .slider:before {
+    position: absolute;
+    content: "";
+    height: 1.4em;
+    width: 1.4em;
+    left: 0.3em;
+    bottom: 0.35em;
+    transition: .4s;
+    border-radius: 50%;
+    box-shadow: rgba(0, 0, 0, 0.17) 0px -10px 10px 0px inset, rgba(0, 0, 0, 0.09) 0px -1px 15px -8px;
+    background-color: #ff99fd;
+    background-image: radial-gradient(at 81% 39%, hsla(327,79%,79%,1) 0px, transparent 50%),
+      radial-gradient(at 11% 72%, hsla(264,64%,79%,1) 0px, transparent 50%),
+      radial-gradient(at 23% 20%, hsla(75,98%,71%,1) 0px, transparent 50%);
+  }
+
+  input:checked + .slider { background-color: #17202A; }
+  input:checked + .slider:before { transform: translateX(1.5em); }
+
+  @keyframes toggle__animation {
+    0%, 100% { transform: translateY(-10px) rotateX(15deg) rotateY(-20deg); }
+    50% { transform: translateY(0px) rotateX(15deg) rotateY(-20deg); }
+  }
+
+  .main-content {
+    margin-top: 80px;
+    min-height: calc(100vh - 80px);
+  }
+
+  .section {
+    display: none;
+    padding: 2rem 5%;
+    animation: fadeIn 0.5s ease;
+  }
+
+  .section.active {
+    display: block;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .home-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    min-height: calc(100vh - 160px);
+  }
+
+  .home-title {
+    font-size: 3.5rem;
+    margin-bottom: 1rem;
+    background: linear-gradient(45deg, var(--primary-color), var(--secondary-color), var(--accent-color));
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    animation: colorChange 5s infinite alternate;
+  }
+
+  .home-subtitle {
+    font-size: 1.5rem;
+    margin-bottom: 2rem;
+    color: var(--text-color);
+  }
+
+  .home-buttons {
+    display: flex;
+    gap: 1.5rem;
+    margin-top: 2rem;
+  }
+
+  .btn {
+    padding: 0.8rem 2rem;
+    border: none;
+    border-radius: 50px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-decoration: none;
+    display: inline-block;
+    position: relative;
+    overflow: hidden;
+    z-index: 1;
+  }
+
+  .btn-primary {
+    background: linear-gradient(45deg, var(--primary-color), var(--secondary-color));
+    color: white;
+    box-shadow: 0 4px 15px rgba(106, 17, 203, 0.4);
+  }
+
+  .btn-secondary {
+    background: linear-gradient(45deg, var(--accent-color), var(--primary-color));
+    color: white;
+    box-shadow: 0 4px 15px rgba(255, 51, 102, 0.4);
+  }
+
+  .btn:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
+  }
+
+  .btn::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(255, 255, 255, 0.2);
+    transform: translateX(-100%);
+    transition: transform 0.6s;
+    z-index: -1;
+  }
+
+  .btn:hover::before {
+    transform: translateX(0);
+  }
+
+  .features {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 2rem;
+    margin-top: 3rem;
+    max-width: 1200px;
+  }
+
+  .feature-card {
+    background-color: var(--card-bg);
+    border-radius: 15px;
+    padding: 2rem;
+    box-shadow: var(--shadow);
+    transition: all 0.3s ease;
+    text-align: center;
+  }
+
+  .feature-card:hover {
+    transform: translateY(-10px);
+    box-shadow: 0 15px 30px rgba(0, 0, 0, 0.15);
+  }
+
+  .feature-icon {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+    background: linear-gradient(45deg, var(--primary-color), var(--secondary-color));
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+
+  .feature-title {
+    font-size: 1.5rem;
+    margin-bottom: 0.5rem;
+    color: var(--text-color);
+  }
+
+  .feature-description {
+    color: var(--text-color);
+    opacity: 0.8;
+  }
+
+  .login-section {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: calc(100vh - 160px);
+  }
+
+  .login-container {
+    position: relative;
+    perspective: 1000px;
+    width: 300px;
+    margin-bottom: 2rem;
+  }
+
+  .login-card {
+    position: relative;
+    width: 100%;
+    height: 80px;
+    background: linear-gradient(135deg, #ff3366, #ff6b35);
+    border: 4px solid #000;
+    box-shadow: 8px 8px 0 #000, 16px 16px 0 rgba(255, 51, 102, 0.3);
+    cursor: pointer;
+    overflow: hidden;
+    transition: all 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+    transform-style: preserve-3d;
+  }
+
+  .login-card:hover,
+  .login-card.expanded {
+    height: 300px;
+    transform: translateZ(20px) rotateX(5deg) rotateY(-5deg);
+    box-shadow: 12px 12px 0 #000, 24px 24px 0 rgba(255, 51, 102, 0.4), 0 0 50px rgba(255, 51, 102, 0.6);
+  }
+
+  .login-title {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 80px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: inherit;
+    transition: all 0.4s ease;
+  }
+
+  .login-text {
+    color: #000;
+    font-weight: 800;
+    font-size: 16px;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    text-shadow: 2px 2px 0 rgba(255, 255, 255, 0.3);
+    transition: all 0.4s ease;
+  }
+
+  .login-card:hover .login-text,
+  .login-card.expanded .login-text {
+    opacity: 0;
+    transform: translateY(-30px) scale(0.8);
+  }
+
+  .login-form {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    box-sizing: border-box;
+    opacity: 0;
+    transform: translateY(30px) scale(0.8);
+    transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  }
+
+  .login-card:hover .login-form,
+  .login-card.expanded .login-form {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+
+  .input-group {
+    position: relative;
+    width: 100%;
+    margin-bottom: 20px;
+  }
+
+  .login-input {
+    width: 100%;
+    padding: 12px 10px;
+    background: rgba(255, 255, 255, 0.8);
+    border: 3px solid #000;
+    font-weight: 700;
+    color: #000;
+    box-shadow: 4px 4px 0 #000;
+    transition: all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+  }
+
+  .login-input:focus {
+    outline: none;
+    transform: translate(2px, 2px);
+    box-shadow: 2px 2px 0 #000;
+  }
+
+  .login-input::placeholder {
+    color: #000;
+    opacity: 0.6;
+  }
+
+  .login-btn {
+    width: 100%;
+    padding: 12px;
+    background: #000;
+    color: #fff;
+    border: none;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    cursor: pointer;
+    box-shadow: 4px 4px 0 rgba(255, 255, 255, 0.3);
+    transition: all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+  }
+
+  .login-btn:hover {
+    transform: translate(2px, 2px);
+    box-shadow: 2px 2px 0 rgba(255, 255, 255, 0.3);
+    background: #333;
+  }
+
+  .login-card::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+    transition: left 0.7s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  }
+
+  .login-card:hover::before,
+  .login-card.expanded::before {
+    left: 100%;
+  }
+
+  .login-card::after {
+    content: "";
+    position: absolute;
+    top: -4px;
+    right: -4px;
+    width: 20px;
+    height: 20px;
+    background: #000;
+    clip-path: polygon(0 0, 100% 0, 100% 100%);
+    transition: all 0.6s ease;
+  }
+
+  .login-card:hover::after,
+  .login-card.expanded::after {
+    transform: scale(1) rotate(0deg);
+    background: rgb(246, 168, 116);
+  }
+
+  .chat-container {
+    display: flex;
+    height: calc(100vh - 160px);
+    max-width: 1200px;
+    margin: 0 auto;
+    background-color: var(--card-bg);
+    border-radius: 15px;
+    box-shadow: var(--shadow);
+    overflow: hidden;
+  }
+
+  .chat-sidebar {
+    width: 280px;
+    background-color: var(--bg-color);
+    padding: 1.5rem;
+    border-right: 1px solid var(--border-color);
+    display: flex;
+    flex-direction: column;
+  }
+
+  .chat-search {
+    position: relative;
+    margin-bottom: 1.5rem;
+  }
+
+  .chat-search input {
+    width: 100%;
+    padding: 0.8rem;
+    border-radius: 50px;
+    border: 1px solid var(--border-color);
+    background-color: var(--card-bg);
+    color: var(--text-color);
+    padding-left: 2.5rem;
+  }
+
+  .chat-search i {
+    position: absolute;
+    left: 1rem;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--text-color);
+    opacity: 0.7;
+  }
+
+  .chat-list {
+    flex: 1;
+    overflow-y: auto;
+  }
+
+  .chat-item {
+    display: flex;
+    align-items: center;
+    padding: 1rem;
+    border-radius: 10px;
+    margin-bottom: 0.5rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+  }
+
+  .chat-item:hover {
+    background-color: var(--bg-color);
+  }
+
+  .chat-item.active {
+    background-color: var(--bg-color);
+    border-left: 3px solid var(--primary-color);
+  }
+
+  .chat-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    margin-right: 1rem;
+    background: linear-gradient(45deg, var(--primary-color), var(--secondary-color));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-weight: bold;
+    flex-shrink: 0;
+  }
+
+  .chat-info {
+    flex: 1;
+    overflow: hidden;
+  }
+
+  .chat-name {
+    font-weight: 600;
+    margin-bottom: 0.2rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .chat-preview {
+    font-size: 0.9rem;
+    opacity: 0.7;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .chat-time {
+    font-size: 0.8rem;
+    opacity: 0.5;
+    flex-shrink: 0;
+  }
+
+  .chat-main {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .chat-header {
+    padding: 1.5rem;
+    border-bottom: 1px solid var(--border-color);
+    display: flex;
+    align-items: center;
+    background-color: var(--card-bg);
+  }
+
+  .chat-header-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    margin-right: 1rem;
+    background: linear-gradient(45deg, var(--primary-color), var(--secondary-color));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-weight: bold;
+  }
+
+  .chat-header-info {
+    flex: 1;
+  }
+
+  .chat-header-name {
+    font-weight: 600;
+    margin-bottom: 0.2rem;
+  }
+
+  .chat-header-status {
+    font-size: 0.9rem;
+    opacity: 0.7;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .status-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background-color: #22c55e;
+  }
+
+  .status-dot.offline {
+    background-color: #9ca3af;
+  }
+
+  .chat-header-actions {
+    display: flex;
+    gap: 1rem;
+  }
+
+  .chat-header-actions button {
+    background: none;
+    border: none;
+    color: var(--text-color);
+    font-size: 1.2rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    padding: 0.5rem;
+    border-radius: 8px;
+  }
+
+  .chat-header-actions button:hover {
+    color: var(--primary-color);
+    background-color: rgba(106, 17, 203, 0.1);
+  }
+
+  .chat-messages {
+    flex: 1;
+    padding: 1.5rem;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    background-color: var(--bg-color);
+  }
+
+  .message {
+    max-width: 70%;
+    padding: 1rem;
+    border-radius: 15px;
+    position: relative;
+    animation: messageSlide 0.3s ease;
+    word-wrap: break-word;
+  }
+
+  @keyframes messageSlide {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .message.sent {
+    align-self: flex-end;
+    background: linear-gradient(45deg, var(--primary-color), var(--secondary-color));
+    color: white;
+    border-bottom-right-radius: 5px;
+  }
+
+  .message.received {
+    align-self: flex-start;
+    background-color: var(--card-bg);
+    color: var(--text-color);
+    border-bottom-left-radius: 5px;
+  }
+
+  .message.bot {
+    align-self: flex-start;
+    background: linear-gradient(45deg, var(--accent-color), var(--primary-color));
+    color: white;
+    border-bottom-left-radius: 5px;
+  }
+
+  .message.system {
+    align-self: center;
+    background-color: transparent;
+    color: var(--text-color);
+    opacity: 0.7;
+    font-style: italic;
+    font-size: 0.9rem;
+    max-width: 100%;
+    padding: 0.5rem 1rem;
+  }
+
+  .message-time {
+    font-size: 0.7rem;
+    opacity: 0.7;
+    margin-top: 0.3rem;
+    text-align: right;
+  }
+
+  .message.received .message-time,
+  .message.bot .message-time {
+    text-align: left;
+  }
+
+  .chat-input {
+    padding: 1.5rem;
+    border-top: 1px solid var(--border-color);
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    background-color: var(--card-bg);
+  }
+
+  .chat-input input {
+    flex: 1;
+    padding: 0.8rem 1.5rem;
+    border-radius: 50px;
+    border: 1px solid var(--border-color);
+    background-color: var(--bg-color);
+    color: var(--text-color);
+    font-size: 1rem;
+    transition: all 0.3s ease;
+  }
+
+  .chat-input input:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(106, 17, 203, 0.1);
+  }
+
+  .chat-input button {
+    width: 45px;
+    height: 45px;
+    border-radius: 50%;
+    border: none;
+    background: linear-gradient(45deg, var(--primary-color), var(--secondary-color));
+    color: white;
+    font-size: 1.2rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .chat-input button:hover {
+    transform: scale(1.1);
+  }
+
+  .chat-input button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
+  }
+
+  .random-chat-btn,
+  .ai-chat-btn {
+    position: fixed;
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    color: white;
+    border: none;
+    font-size: 1.5rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .random-chat-btn {
+    bottom: 30px;
+    right: 30px;
+    background: linear-gradient(45deg, var(--accent-color), var(--primary-color));
+    box-shadow: 0 4px 15px rgba(255, 51, 102, 0.4);
+  }
+
+  .random-chat-btn:hover {
+    transform: scale(1.1);
+    box-shadow: 0 6px 20px rgba(255, 51, 102, 0.6);
+  }
+
+  .ai-chat-btn {
+    bottom: 30px;
+    right: 100px;
+    background: linear-gradient(45deg, var(--secondary-color), var(--accent-color));
+    box-shadow: 0 4px 15px rgba(37, 117, 252, 0.4);
+  }
+
+  .ai-chat-btn:hover {
+    transform: scale(1.1);
+    box-shadow: 0 6px 20px rgba(37, 117, 252, 0.6);
+  }
+
+  .typing-indicator {
+    display: flex;
+    align-items: center;
+    padding: 0.8rem 1rem;
+    background-color: var(--card-bg);
+    border-radius: 15px;
+    border-bottom-left-radius: 5px;
+    max-width: 70px;
+  }
+
+  .typing-indicator span {
+    height: 8px;
+    width: 8px;
+    background-color: var(--text-color);
+    border-radius: 50%;
+    display: inline-block;
+    margin: 0 2px;
+    opacity: 0.4;
+  }
+
+  .typing-indicator span:nth-child(1) { animation: typing 1.5s infinite; }
+  .typing-indicator span:nth-child(2) { animation: typing 1.5s infinite 0.2s; }
+  .typing-indicator span:nth-child(3) { animation: typing 1.5s infinite 0.4s; }
+
+  @keyframes typing {
+    0% { transform: translateY(0); opacity: 0.4; }
+    50% { transform: translateY(-10px); opacity: 0.8; }
+    100% { transform: translateY(0); opacity: 0.4; }
+  }
+
+  .info-container {
+    max-width: 800px;
+    margin: 0 auto;
+    background-color: var(--card-bg);
+    border-radius: 15px;
+    box-shadow: var(--shadow);
+    padding: 2rem;
+  }
+
+  .info-title {
+    font-size: 2rem;
+    margin-bottom: 1.5rem;
+    color: var(--text-color);
+    text-align: center;
+  }
+
+  .info-content {
+    line-height: 1.6;
+    color: var(--text-color);
+  }
+
+  .info-content p {
+    margin-bottom: 1rem;
+  }
+
+  .contact-form {
+    margin-top: 2rem;
+  }
+
+  .form-group {
+    margin-bottom: 1.5rem;
+  }
+
+  .form-group label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-weight: 600;
+  }
+
+  .form-group input,
+  .form-group textarea {
+    width: 100%;
+    padding: 0.8rem;
+    border-radius: 8px;
+    border: 1px solid var(--border-color);
+    background-color: var(--bg-color);
+    color: var(--text-color);
+    font-size: 1rem;
+    transition: all 0.3s ease;
+  }
+
+  .form-group input:focus,
+  .form-group textarea:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(106, 17, 203, 0.1);
+  }
+
+  .form-group textarea {
+    resize: vertical;
+    min-height: 150px;
+  }
+
+  .help-list {
+    list-style: none;
+    margin-top: 1.5rem;
+    padding: 0;
+  }
+
+  .help-item {
+    margin-bottom: 1.5rem;
+    padding: 1rem;
+    background-color: var(--bg-color);
+    border-radius: 10px;
+    border-left: 3px solid var(--primary-color);
+  }
+
+  .help-question {
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+  }
+
+  .notification {
+    position: fixed;
+    top: 100px;
+    left: 50%;
+    transform: translateX(-50%);
+    padding: 1rem 2rem;
+    border-radius: 50px;
+    color: white;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+    z-index: 1000;
+    animation: fadeIn 0.5s ease;
+  }
+
+  .online-users {
+    padding: 1rem;
+    border-top: 1px solid var(--border-color);
+    font-size: 0.9rem;
+    opacity: 0.7;
+  }
+
+  .connection-status {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    font-size: 0.85rem;
+  }
+
+  .connection-status .dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+  }
+
+  .connection-status .dot.connected { background-color: #22c55e; }
+  .connection-status .dot.disconnected { background-color: #ef4444; }
+
+  @media (max-width: 768px) {
+    .navbar { padding: 1rem 3%; }
+    .nav-links { display: none; }
+    .home-title { font-size: 2.5rem; }
+    .home-subtitle { font-size: 1.2rem; }
+    .home-buttons { flex-direction: column; width: 100%; max-width: 300px; }
+    .chat-container { flex-direction: column; height: auto; min-height: calc(100vh - 160px); }
+    .chat-sidebar { width: 100%; border-right: none; border-bottom: 1px solid var(--border-color); max-height: 200px; }
+    .message { max-width: 90%; }
+    .ai-chat-btn { right: 30px; bottom: 100px; }
+    .random-chat-btn { bottom: 30px; }
+  }
+
+    </style>
+  </head>
+  <body>
+    <nav class="navbar">
+      <div class="logo">Get Speak</div>
+      <ul class="nav-links">
+        <li><a href="#" data-section="home" class="active">Home</a></li>
+        <li><a href="#" data-section="chat">Chat</a></li>
+        <li><a href="#" data-section="about">About</a></li>
+        <li><a href="#" data-section="contact">Contact</a></li>
+        <li><a href="#" data-section="help">Help</a></li>
+        <li><a href="#" data-section="login">Login</a></li>
+      </ul>
+      <div class="theme-toggle">
+        <label class="switch">
+          <input id="theme-toggle" type="checkbox" aria-label="Toggle dark mode" />
+          <span class="slider"></span>
+        </label>
+      </div>
+    </nav>
+
+    <div class="main-content">
+      <section id="section-home" class="section active">
+        <div class="home-container">
+          <h1 class="home-title">Get Speak</h1>
+          <p class="home-subtitle">Connect with people around the world instantly</p>
+          <div class="home-buttons">
+            <button id="start-chatting" class="btn btn-primary">Join Now</button>
+            <button id="signup" class="btn btn-secondary">Sign Up</button>
+          </div>
+
+          <div class="features">
+            <div class="feature-card">
+              <div class="feature-icon"><i class="fas fa-comments"></i></div>
+              <h3 class="feature-title">Real-time Chat</h3>
+              <p class="feature-description">Connect with people instantly in real-time conversations with Socket.io powered messaging.</p>
+            </div>
+            <div class="feature-card">
+              <div class="feature-icon"><i class="fas fa-globe"></i></div>
+              <h3 class="feature-title">Global Community</h3>
+              <p class="feature-description">Meet people from different cultures and backgrounds from around the world.</p>
+            </div>
+            <div class="feature-card">
+              <div class="feature-icon"><i class="fas fa-shield-alt"></i></div>
+              <h3 class="feature-title">Safe & Secure</h3>
+              <p class="feature-description">Your privacy and security are our top priorities with encrypted connections.</p>
+            </div>
+            <div class="feature-card">
+              <div class="feature-icon"><i class="fas fa-robot"></i></div>
+              <h3 class="feature-title">AI Assistant</h3>
+              <p class="feature-description">Get help from our AI assistant anytime you need it - powered by advanced AI.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="section-chat" class="section">
+        <div class="chat-container">
+          <div class="chat-sidebar">
+            <div class="chat-search">
+              <i class="fas fa-search"></i>
+              <input type="text" placeholder="Search chats..." />
+            </div>
+            <div id="chat-list" class="chat-list">
+              <div class="chat-item active" data-chat="global">
+                <div class="chat-avatar" style="background: linear-gradient(45deg, #6a11cb, #2575fc);">
+                  <i class="fas fa-globe"></i>
+                </div>
+                <div class="chat-info">
+                  <div class="chat-name">Global Chat</div>
+                  <div class="chat-preview"><span id="online-count">12</span> users online</div>
+                </div>
+                <div class="chat-time">
+                  <span id="global-status-dot" style="display: inline-block; width: 8px; height: 8px; border-radius: 50%; background-color: #22c55e;"></span>
+                </div>
+              </div>
+              <div class="chat-item" data-chat="ai">
+                <div class="chat-avatar" style="background: linear-gradient(45deg, #2575fc, #ff3366);">
+                  <i class="fas fa-robot"></i>
+                </div>
+                <div class="chat-info">
+                  <div class="chat-name">AI Assistant</div>
+                  <div class="chat-preview">Ask me anything!</div>
+                </div>
+                <div class="chat-time">
+                  <span style="display: inline-block; width: 8px; height: 8px; border-radius: 50%; background-color: #22c55e;"></span>
+                </div>
+              </div>
+
+              <div id="demo-users"></div>
+            </div>
+
+            <div id="online-users" class="online-users">
+              <i class="fas fa-users"></i> <span id="online-count-bottom">12</span> online
+            </div>
+          </div>
+
+          <div class="chat-main">
+            <div class="chat-header">
+              <div id="chat-header-avatar" class="chat-header-avatar" style="background: linear-gradient(45deg, #6a11cb, #2575fc);">
+                <i class="fas fa-globe"></i>
+              </div>
+              <div class="chat-header-info">
+                <div id="chat-header-name" class="chat-header-name">Global Chat</div>
+                <div id="chat-header-status" class="chat-header-status">
+                  <span class="status-dot" style="background-color: #22c55e;"></span>
+                  Connected
+                </div>
+              </div>
+              <div class="chat-header-actions">
+                <button type="button" title="Start Call" aria-label="Start Call"><i class="fas fa-phone"></i></button>
+                <button type="button" title="Start Video Call" aria-label="Start Video Call"><i class="fas fa-video"></i></button>
+                <button type="button" title="More Options" aria-label="More Options"><i class="fas fa-ellipsis-v"></i></button>
+              </div>
+            </div>
+
+            <div id="chat-messages" class="chat-messages"></div>
+
+            <div class="chat-input">
+              <input id="message-input" type="text" placeholder="Type a message..." />
+              <button id="send-btn" type="button"><i class="fas fa-paper-plane"></i></button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="section-about" class="section">
+        <div class="info-container">
+          <h2 class="info-title">About Get Speak</h2>
+          <div class="info-content">
+            <p>Welcome to Get Speak, the revolutionary chat application that connects you with people from all around the world. Our platform is designed to make communication easy, fun, and secure.</p>
+            <p>Founded in 2023, Get Speak has quickly become one of the most popular chat applications, with millions of users worldwide. Our mission is to break down barriers and bring people together through meaningful conversations.</p>
+            <p>Whether you&apos;re looking to make new friends, practice a new language, or simply have a casual chat, Get Speak is the perfect platform for you. With our advanced matching algorithm, you&apos;ll be connected with like-minded individuals in no time.</p>
+            <p>At Get Speak, we value your privacy and security above all else. That&apos;s why we&apos;ve implemented state-of-the-art encryption and security measures to ensure that your conversations remain private and secure.</p>
+            <p>Join us today and experience the future of online communication! Developer Ganesh Baradkar.</p>
+          </div>
+        </div>
+      </section>
+
+      <section id="section-contact" class="section">
+        <div class="info-container">
+          <h2 class="info-title">Contact Us</h2>
+          <div class="info-content">
+            <p>We&apos;d love to hear from you! Whether you have a question, feedback, or just want to say hello, feel free to reach out to us using the form below.</p>
+
+            <form id="contact-form" class="contact-form">
+              <div class="form-group">
+                <label for="name">Name</label>
+                <input type="text" id="name" placeholder="Your Name" required />
+              </div>
+              <div class="form-group">
+                <label for="email">Email</label>
+                <input type="email" id="email" placeholder="Your Email" required />
+              </div>
+              <div class="form-group">
+                <label for="subject">Subject</label>
+                <input type="text" id="subject" placeholder="Subject" required />
+              </div>
+              <div class="form-group">
+                <label for="message">Message</label>
+                <textarea id="message" placeholder="Your Message" required></textarea>
+              </div>
+              <button type="submit" class="btn btn-primary">Send Message</button>
+            </form>
+          </div>
+        </div>
+      </section>
+
+      <section id="section-help" class="section">
+        <div class="info-container">
+          <h2 class="info-title">Help & Support</h2>
+          <div class="info-content">
+            <p>Here are some frequently asked questions about Get Speak. If you can&apos;t find what you&apos;re looking for, feel free to contact our support team or ask our AI assistant.</p>
+            <ul class="help-list">
+              <li class="help-item">
+                <div class="help-question">How do I create an account?</div>
+                <div>Creating an account is easy! Simply click on the &quot;Join Now&quot; button on the home page and enter your username. You&apos;ll be up and running in no time.</div>
+              </li>
+              <li class="help-item">
+                <div class="help-question">How do I start a chat with others?</div>
+                <div>Click on the chat section and select Global Chat to talk with all connected users, or click on any user from the list to start a private conversation.</div>
+              </li>
+              <li class="help-item">
+                <div class="help-question">How do I chat with the AI assistant?</div>
+                <div>Click on the AI Assistant in the chat list or use the AI chat button in the bottom right corner. The AI is available 24/7 to help you with any questions.</div>
+              </li>
+              <li class="help-item">
+                <div class="help-question">Is Get Speak free to use?</div>
+                <div>Yes, Get Speak is completely free to use. We offer premium features for users who want an enhanced experience, but our basic features are available to everyone at no cost.</div>
+              </li>
+              <li class="help-item">
+                <div class="help-question">How do I report inappropriate behavior?</div>
+                <div>If you encounter any inappropriate behavior, please report it immediately by clicking on the report button in the chat. Our team will review the report and take appropriate action.</div>
+              </li>
+              <li class="help-item">
+                <div class="help-question">How does real-time chat work?</div>
+                <div>Get Speak uses Socket.io technology for real-time bidirectional communication. Messages are delivered instantly to all connected users without page refreshes.</div>
+              </li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <section id="section-login" class="section">
+        <div class="login-section">
+          <h2 class="info-title">Welcome to Get Speak</h2>
+          <div class="login-container">
+            <div id="login-card" class="login-card expanded">
+              <div class="login-title">
+                <span class="login-text">Join Chat</span>
+              </div>
+              <div class="login-form" style="opacity: 1; transform: translateY(0) scale(1);">
+                <div class="input-group">
+                  <input id="username-input" type="text" class="login-input" placeholder="Enter your username" />
+                </div>
+                <button id="join-btn" type="button" class="login-btn">Join Chat</button>
+              </div>
+            </div>
+          </div>
+          <p style="color: var(--text-color); opacity: 0.7;">
+            <span id="connection-dot" style="display: inline-block; width: 8px; height: 8px; border-radius: 50%; background-color: #22c55e; margin-right: 8px;"></span>
+            <span id="connection-text">Connected to server</span>
+          </p>
+        </div>
+      </section>
+    </div>
+
+    <button id="ai-chat-btn" type="button" class="ai-chat-btn" title="Chat with AI Assistant" aria-label="Chat with AI Assistant">
+      <i class="fas fa-robot"></i>
+    </button>
+    <button id="random-chat-btn" type="button" class="random-chat-btn" title="Random Chat">
+      <i class="fas fa-random"></i>
+    </button>
+
+    <div id="notification" class="notification" style="display: none;"></div>
+
+    <script>
+  const demoUsers = [
+    { id: '1', name: 'John Smith', initials: 'JS', preview: 'Hey, how are you doing?', time: '10:30 AM', online: true },
+    { id: '2', name: 'Mary Johnson', initials: 'MJ', preview: 'See you tomorrow!', time: 'Yesterday', online: true },
+    { id: '3', name: 'Robert Brown', initials: 'RB', preview: 'Thanks for your help!', time: 'Yesterday', online: false },
+    { id: '4', name: 'Emily Wilson', initials: 'EW', preview: 'Did you see the new movie?', time: 'Wednesday', online: true }
+  ];
+
+  const state = {
+    activeSection: 'home',
+    isDark: false,
+    username: '',
+    isUsernameSet: false,
+    currentChatType: 'global',
+    selectedUserId: null
+  };
+
+  const chatMessages = {
+    global: [
+      { id: 'g1', username: 'System', content: 'Welcome to Global Chat!', type: 'system', timestamp: new Date() },
+      { id: 'g2', username: 'John Smith', content: 'Hi everyone!', type: 'user', timestamp: new Date() }
+    ],
+    ai: [
+      { id: 'a1', username: 'AI Assistant', content: 'Hello! Ask me anything.', type: 'bot', timestamp: new Date() }
+    ],
+    users: {}
+  };
+
+  const sectionLinks = document.querySelectorAll('.nav-links a');
+  const sections = document.querySelectorAll('.section');
+  const themeToggle = document.getElementById('theme-toggle');
+  const chatList = document.getElementById('chat-list');
+  const chatMessagesEl = document.getElementById('chat-messages');
+  const chatHeaderName = document.getElementById('chat-header-name');
+  const chatHeaderAvatar = document.getElementById('chat-header-avatar');
+  const chatHeaderStatus = document.getElementById('chat-header-status');
+  const messageInput = document.getElementById('message-input');
+  const sendBtn = document.getElementById('send-btn');
+  const usernameInput = document.getElementById('username-input');
+  const joinBtn = document.getElementById('join-btn');
+  const startChattingBtn = document.getElementById('start-chatting');
+  const signupBtn = document.getElementById('signup');
+  const notification = document.getElementById('notification');
+  const aiChatBtn = document.getElementById('ai-chat-btn');
+  const randomChatBtn = document.getElementById('random-chat-btn');
+
+  function showNotification(message, color) {
+    notification.textContent = message;
+    notification.style.backgroundColor = color || 'var(--primary-color)';
+    notification.style.display = 'block';
+    setTimeout(() => {
+      notification.style.display = 'none';
+    }, 3000);
+  }
+
+  function setActiveSection(section) {
+    state.activeSection = section;
+    sections.forEach((el) => {
+      el.classList.toggle('active', el.id === `section-${section}`);
+    });
+    sectionLinks.forEach((link) => {
+      link.classList.toggle('active', link.dataset.section === section);
+    });
+
+    const showFloating = section === 'chat';
+    aiChatBtn.style.display = showFloating ? 'flex' : 'none';
+    randomChatBtn.style.display = showFloating ? 'flex' : 'none';
+  }
+
+  function setTheme(isDark) {
+    state.isDark = isDark;
+    if (isDark) {
+      document.body.setAttribute('data-theme', 'dark');
+      localStorage.setItem('theme', 'dark');
+    } else {
+      document.body.setAttribute('data-theme', 'light');
+      localStorage.setItem('theme', 'light');
+    }
+    themeToggle.checked = isDark;
+  }
+
+  function renderDemoUsers() {
+    const container = document.getElementById('demo-users');
+    container.innerHTML = '';
+    demoUsers.forEach((user) => {
+      const item = document.createElement('div');
+      item.className = 'chat-item';
+      item.dataset.chat = `user-${user.id}`;
+      item.innerHTML = `
+        <div class="chat-avatar">${user.initials}</div>
+        <div class="chat-info">
+          <div class="chat-name">${user.name}</div>
+          <div class="chat-preview">${user.preview}</div>
+        </div>
+        <div class="chat-time">${user.time}</div>
+      `;
+      container.appendChild(item);
+    });
+  }
+
+  function setChatType(type, userId) {
+    state.currentChatType = type;
+    state.selectedUserId = userId || null;
+
+    const items = chatList.querySelectorAll('.chat-item');
+    items.forEach((item) => {
+      const key = item.dataset.chat;
+      const isActive = (type === 'global' && key === 'global') ||
+        (type === 'ai' && key === 'ai') ||
+        (type === 'user' && key === `user-${userId}`);
+      item.classList.toggle('active', isActive);
+    });
+
+    if (type === 'global') {
+      chatHeaderName.textContent = 'Global Chat';
+      chatHeaderAvatar.innerHTML = '<i class="fas fa-globe"></i>';
+      chatHeaderAvatar.style.background = 'linear-gradient(45deg, #6a11cb, #2575fc)';
+      chatHeaderStatus.innerHTML = '<span class="status-dot" style="background-color: #22c55e;"></span> Connected';
+    } else if (type === 'ai') {
+      chatHeaderName.textContent = 'AI Assistant';
+      chatHeaderAvatar.innerHTML = '<i class="fas fa-robot"></i>';
+      chatHeaderAvatar.style.background = 'linear-gradient(45deg, #2575fc, #ff3366)';
+      chatHeaderStatus.innerHTML = '<span class="status-dot"></span> Always Online';
+    } else {
+      const user = demoUsers.find((u) => u.id === userId);
+      chatHeaderName.textContent = user ? user.name : 'Chat';
+      chatHeaderAvatar.textContent = user ? user.initials : '';
+      chatHeaderAvatar.style.background = '';
+      const statusText = user && user.online ? 'Online' : 'Offline';
+      const statusClass = user && user.online ? '' : ' offline';
+      chatHeaderStatus.innerHTML = `<span class="status-dot${statusClass}"></span> ${statusText}`;
+    }
+
+    renderMessages();
+  }
+
+  function ensureUserMessages(userId) {
+    if (!chatMessages.users[userId]) {
+      const user = demoUsers.find((u) => u.id === userId);
+      chatMessages.users[userId] = [
+        { id: `u-${userId}-1`, username: user ? user.name : 'User', content: `Hello! I'm ${user ? user.name : 'User'}. Nice to meet you!`, type: 'user', timestamp: new Date() }
+      ];
+    }
+  }
+
+  function renderMessages() {
+    chatMessagesEl.innerHTML = '';
+    let messages = [];
+
+    if (state.currentChatType === 'global') {
+      messages = chatMessages.global;
+    } else if (state.currentChatType === 'ai') {
+      messages = chatMessages.ai;
+    } else if (state.currentChatType === 'user' && state.selectedUserId) {
+      ensureUserMessages(state.selectedUserId);
+      messages = chatMessages.users[state.selectedUserId];
+    }
+
+    messages.forEach((msg) => {
+      const item = document.createElement('div');
+      const isSystem = msg.type === 'system';
+      const isBot = msg.type === 'bot';
+      const isSent = msg.username === state.username && msg.type === 'user';
+      const typeClass = isSystem ? 'system' : isBot ? 'bot' : isSent ? 'sent' : 'received';
+      item.className = `message ${typeClass}`;
+
+      if (isSystem) {
+        item.textContent = msg.content;
+      } else {
+        const content = document.createElement('div');
+        content.textContent = msg.content;
+        const time = document.createElement('div');
+        time.className = 'message-time';
+        time.textContent = new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        item.appendChild(content);
+        item.appendChild(time);
+      }
+      chatMessagesEl.appendChild(item);
+    });
+    chatMessagesEl.scrollTop = chatMessagesEl.scrollHeight;
+  }
+
+  function addMessage(content) {
+    const trimmed = content.trim();
+    if (!trimmed) return;
+
+    if (state.currentChatType === 'global' && !state.isUsernameSet) {
+      showNotification('Please login to chat', 'var(--accent-color)');
+      return;
+    }
+
+    const payload = {
+      id: `m-${Date.now()}`,
+      username: state.username || 'You',
+      content: trimmed,
+      type: 'user',
+      timestamp: new Date()
+    };
+
+    if (state.currentChatType === 'global') {
+      chatMessages.global.push(payload);
+    } else if (state.currentChatType === 'ai') {
+      chatMessages.ai.push(payload);
+      setTimeout(() => {
+        chatMessages.ai.push({
+          id: `ai-${Date.now()}`,
+          username: 'AI Assistant',
+          content: 'This is a static demo. The full AI chat runs in the Next.js app.',
+          type: 'bot',
+          timestamp: new Date()
+        });
+        renderMessages();
+      }, 800);
+    } else if (state.currentChatType === 'user' && state.selectedUserId) {
+      ensureUserMessages(state.selectedUserId);
+      chatMessages.users[state.selectedUserId].push(payload);
+    }
+
+    renderMessages();
+    messageInput.value = '';
+  }
+
+  function updateInputPlaceholder() {
+    if (state.currentChatType === 'global' && !state.isUsernameSet) {
+      messageInput.placeholder = 'Please login to chat...';
+      messageInput.disabled = true;
+      sendBtn.disabled = true;
+    } else {
+      messageInput.placeholder = 'Type a message...';
+      messageInput.disabled = false;
+      sendBtn.disabled = false;
+    }
+  }
+
+  sectionLinks.forEach((link) => {
+    link.addEventListener('click', (e) => {
+      e.preventDefault();
+      setActiveSection(link.dataset.section);
+    });
+  });
+
+  themeToggle.addEventListener('change', (e) => {
+    setTheme(e.target.checked);
+  });
+
+  chatList.addEventListener('click', (e) => {
+    const item = e.target.closest('.chat-item');
+    if (!item) return;
+    const chat = item.dataset.chat;
+    if (chat === 'global') {
+      setChatType('global');
+    } else if (chat === 'ai') {
+      setChatType('ai');
+    } else if (chat && chat.startsWith('user-')) {
+      setChatType('user', chat.replace('user-', ''));
+    }
+    updateInputPlaceholder();
+  });
+
+  sendBtn.addEventListener('click', () => addMessage(messageInput.value));
+  messageInput.addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') addMessage(messageInput.value);
+  });
+
+  joinBtn.addEventListener('click', () => {
+    const value = usernameInput.value.trim();
+    if (!value) return;
+    state.username = value;
+    state.isUsernameSet = true;
+    showNotification(`Welcome, ${value}!`, 'var(--primary-color)');
+    setActiveSection('chat');
+    setChatType('global');
+    updateInputPlaceholder();
+  });
+
+  startChattingBtn.addEventListener('click', () => {
+    if (state.isUsernameSet) {
+      setActiveSection('chat');
+    } else {
+      setActiveSection('login');
+    }
+  });
+
+  signupBtn.addEventListener('click', () => setActiveSection('login'));
+
+  document.getElementById('contact-form').addEventListener('submit', (e) => {
+    e.preventDefault();
+    showNotification('Your message has been sent successfully!', 'var(--primary-color)');
+    e.target.reset();
+  });
+
+  aiChatBtn.addEventListener('click', () => {
+    setActiveSection('chat');
+    setChatType('ai');
+    updateInputPlaceholder();
+  });
+
+  randomChatBtn.addEventListener('click', () => {
+    const randomUser = demoUsers[Math.floor(Math.random() * demoUsers.length)];
+    setActiveSection('chat');
+    setChatType('user', randomUser.id);
+    showNotification(`Connected with ${randomUser.name}`, 'var(--accent-color)');
+    updateInputPlaceholder();
+  });
+
+  const savedTheme = localStorage.getItem('theme');
+  if (savedTheme === 'dark') {
+    setTheme(true);
+  } else {
+    setTheme(false);
+  }
+
+  renderDemoUsers();
+  setActiveSection('home');
+  setChatType('global');
+  updateInputPlaceholder();
+
+  aiChatBtn.style.display = 'none';
+  randomChatBtn.style.display = 'none';
+    </script>
+  </body>
+</html>

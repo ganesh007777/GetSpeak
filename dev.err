@@ -1,0 +1,45 @@
+$ next dev -p 3000
+⚠ Warning: Next.js inferred your workspace root, but it may not be correct.
+ We detected multiple lockfiles and selected the directory of C:\Users\barad\package-lock.json as the root directory.
+ To silence this warning, set `turbopack.root` in your Next.js config, or consider removing one of the lockfiles if it's not needed.
+   See https://nextjs.org/docs/app/api-reference/config/next-config-js/turbopack#root-directory for more information.
+ Detected additional lockfiles: 
+   * C:\Users\barad\OneDrive\Desktop\Project\chat\package-lock.json
+
+⚠ Cross origin request detected from 192.168.56.1 to /_next/* resource. In a future major version of Next.js, you will need to explicitly configure "allowedDevOrigins" in next.config to allow this.
+Read more: https://nextjs.org/docs/app/api-reference/config/next-config-js/allowedDevOrigins
+AI Chat Error: Error: 429 You exceeded your current quota, please check your plan and billing details. For more information on this error, read the docs: https://platform.openai.com/docs/guides/error-codes/api-errors.
+    at async POST (src\app\api\ai-chat\route.ts:61:22)
+  59 |       process.env.OPENAI_ENABLE_WEB_SEARCH === 'true' ? [{ type: 'web_search' }] : undefined
+  60 |
+> 61 |     const response = await client.responses.create({
+     |                      ^
+  62 |       model: process.env.OPENAI_MODEL ?? 'gpt-5',
+  63 |       input: messages,
+  64 |       ...(tools ? { tools } : {}), {
+  status: 429,
+  headers: Headers {
+    date: 'Sat, 07 Mar 2026 04:21:27 GMT',
+    'content-type': 'application/json',
+    'content-length': '316',
+    connection: 'keep-alive',
+    server: 'cloudflare',
+    'openai-version': '2020-10-01',
+    'openai-organization': 'user-cdwqaujcdtdzubq4vw0ocqpv',
+    'openai-project': 'proj_izpac0OA0lXSFIihH4C7fqQu',
+    'x-request-id': 'req_4ecf0164723746509cf6ef420571e4da',
+    'openai-processing-ms': '399',
+    'cf-cache-status': 'DYNAMIC',
+    'set-cookie': '__cf_bm=EO0gmZoq.vw3pP1wK.E9irejRlDzXPRACwsPmEzFSks-1772857286.7808635-1.0.1.1-lrlE7aSw_GsVu0Y0B5_vetBqiOdy3vr3LzI5h5nIUnELd7PIk2cwZbOzsylHWZkhkAABpv3Az25TY08td7paRSxG.LCxsip98ljzFvF89Z_blyTq7M8zl8R15yaMx.6M; HttpOnly; Secure; Path=/; Domain=api.openai.com; Expires=Sat, 07 Mar 2026 04:51:27 GMT, _cfuvid=jm96ad_elFE3J55xV3JIbdH0rhPAR9jCMOR17CxBUxw-1772857286.7808635-1.0.1.1-UL1bk3GRy.mUH4BFw5Qje7po9xmIs7DNosoLpl2sUxs; HttpOnly; SameSite=None; Secure; Path=/; Domain=api.openai.com',
+    'strict-transport-security': 'max-age=31536000; includeSubDomains; preload',
+    'x-content-type-options': 'nosniff',
+    'cf-ray': '9d86d03a688917d7-BOM',
+    'alt-svc': 'h3=":443"; ma=86400'
+  },
+  requestID: 'req_4ecf0164723746509cf6ef420571e4da',
+  error: [Object],
+  code: 'insufficient_quota',
+  param: null,
+  type: 'insufficient_quota'
+}
+error: script "dev" exited with code 1
