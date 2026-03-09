@@ -1098,8 +1098,12 @@ export default function GetSpeak() {
   useEffect(() => {
     // Connect directly to the socket server on port 3003
     // Using window.location.hostname to get the current host
-    const socketHost = typeof window !== 'undefined' ? window.location.hostname : 'localhost'
-    const socketUrl = `http://${socketHost}:3003`
+    const envSocketUrl = process.env.NEXT_PUBLIC_SOCKET_URL
+    const socketUrl =
+      envSocketUrl ??
+      (typeof window !== 'undefined'
+        ? `${window.location.protocol}//${window.location.hostname}:3003`
+        : 'http://localhost:3003')
     
     console.log('Connecting to socket server:', socketUrl)
     
@@ -1215,9 +1219,23 @@ export default function GetSpeak() {
         })
         
         const data = await response.json()
-        
+
         setIsTyping(false)
-        
+
+        if (!response.ok) {
+          const errorText =
+            data?.error || data?.details || 'Sorry, I could not generate a response.'
+          const aiErrorMessage: Message = {
+            id: (Date.now() + 1).toString(),
+            username: 'AI Assistant',
+            content: errorText,
+            timestamp: new Date(),
+            type: 'bot'
+          }
+          setMessages(prev => [...prev, aiErrorMessage])
+          return
+        }
+
         const aiMessage: Message = {
           id: (Date.now() + 1).toString(),
           username: 'AI Assistant',
@@ -1226,7 +1244,7 @@ export default function GetSpeak() {
           type: 'bot'
         }
         setMessages(prev => [...prev, aiMessage])
-        
+
         // Add to AI chat history
         setAiChatHistory(prev => [...prev, { role: 'assistant', content: data.response }])
       } catch (error) {
