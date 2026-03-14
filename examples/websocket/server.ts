@@ -49,6 +49,15 @@ const createUserMessage = (username: string, content: string): Message => ({
 io.on('connection', (socket) => {
   console.log(`User connected: ${socket.id}`)
 
+  const removeUser = () => {
+    const user = users.get(socket.id)
+    if (!user) return
+    users.delete(socket.id)
+    const leaveMessage = createSystemMessage(`${user.username} left the chat room`)
+    io.emit('user-left', { user: { id: socket.id, username: user.username }, message: leaveMessage })
+    console.log(`${user.username} left the chat room, current online users: ${users.size}`)
+  }
+
   // Add test event handler
   socket.on('test', (data) => {
     console.log('Received test message:', data)
@@ -94,20 +103,55 @@ io.on('connection', (socket) => {
   })
 
   socket.on('disconnect', () => {
-    const user = users.get(socket.id)
-    
-    if (user) {
-      // Remove from user list
-      users.delete(socket.id)
-      
-      // Send leave message to all users
-      const leaveMessage = createSystemMessage(`${user.username} left the chat room`)
-      io.emit('user-left', { user: { id: socket.id, username: user.username }, message: leaveMessage })
-      
-      console.log(`${user.username} left the chat room, current online users: ${users.size}`)
-    } else {
-      console.log(`User disconnected: ${socket.id}`)
+    if (users.has(socket.id)) {
+      removeUser()
+      return
     }
+    console.log(`User disconnected: ${socket.id}`)
+  })
+
+  socket.on('logout', () => {
+    removeUser()
+  })
+
+  socket.on('join-room', (data: { roomId: string }) => {
+    const roomId = data?.roomId
+    if (!roomId) return
+
+    socket.join(roomId)
+    const room = io.sockets.adapter.rooms.get(roomId)
+    const peers = room ? Array.from(room).filter((id) => id !== socket.id) : []
+    socket.emit('room-peers', { peers })
+    socket.to(roomId).emit('peer-joined', { peerId: socket.id })
+  })
+
+  socket.on('leave-room', (data: { roomId: string }) => {
+    const roomId = data?.roomId
+    if (!roomId) return
+    socket.leave(roomId)
+    socket.to(roomId).emit('peer-left', { peerId: socket.id })
+  })
+
+  socket.on('webrtc-offer', (data: { to: string; offer: any }) => {
+    if (!data?.to || !data?.offer) return
+    io.to(data.to).emit('webrtc-offer', { from: socket.id, offer: data.offer })
+  })
+
+  socket.on('webrtc-answer', (data: { to: string; answer: any }) => {
+    if (!data?.to || !data?.answer) return
+    io.to(data.to).emit('webrtc-answer', { from: socket.id, answer: data.answer })
+  })
+
+  socket.on('webrtc-ice-candidate', (data: { to: string; candidate: any }) => {
+    if (!data?.to || !data?.candidate) return
+    io.to(data.to).emit('webrtc-ice-candidate', { from: socket.id, candidate: data.candidate })
+  })
+
+  socket.on('disconnecting', () => {
+    socket.rooms.forEach((roomId) => {
+      if (roomId === socket.id) return
+      socket.to(roomId).emit('peer-left', { peerId: socket.id })
+    })
   })
 
   socket.on('error', (error) => {

@@ -19,7 +19,7 @@ export const metadata: Metadata = {
   keywords: ["Get Speak", "Chat", "Real-time", "AI Assistant", "Global Community", "Messaging"],
   authors: [{ name: "Ganesh Baradkar" }],
   icons: {
-    icon: "https://z-cdn.chatglm.cn/z-ai/static/logo.svg",
+    icon: "C:\Users\barad\OneDrive\Desktop\Gemini_Generated_Image_hjz907hjz907hjz9.png",
   },
   openGraph: {
     title: "Get Speak - Connect with the World",

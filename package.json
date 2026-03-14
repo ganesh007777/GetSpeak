@@ -11,7 +11,8 @@
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate dev",
     "db:reset": "prisma migrate reset",
-    "admin:create": "bun run scripts/create-admin.ts"
+    "admin:create": "bun run scripts/create-admin.ts",
+    "socket:dev": "bun mini-services/socket-server/server.ts"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",

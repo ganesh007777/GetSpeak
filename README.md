@@ -63,6 +63,9 @@ bun install
 # Start development server
 bun run dev
 
+# Start socket server (for realtime chat + calls)
+bun run socket:dev
+
 # Build for production
 bun run build
 
@@ -71,6 +74,25 @@ bun start
 ```
 
 Open [http://localhost:3000](http://localhost:3000) to see your application running.
+
+## 🗄️ Database
+
+After updating Prisma schema, run:
+
+```bash
+bun run db:push
+```
+
+## 🔌 Realtime Server
+
+Environment variables (see `.env`):
+
+```bash
+APP_ORIGIN="http://localhost:3000"
+SOCKET_PORT=3003
+```
+
+Note: on managed platforms the socket server will use `PORT` if provided.
 
 ## 🤖 Powered by Z.ai
 

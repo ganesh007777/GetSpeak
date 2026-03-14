@@ -7,32 +7,71 @@ import { io, Socket } from 'socket.io-client'
 interface User {
   id: string
   username: string
+  name?: string | null
+}
+
+interface AuthUser {
+  id: string
+  email: string
+  name: string | null
+  username?: string | null
+}
+
+interface ChatParticipantSummary {
+  id: string
+  username?: string | null
+  name?: string | null
+  role: string
+}
+
+interface ChatSummary {
+  id: string
+  type: 'GLOBAL' | 'DIRECT' | 'GROUP'
+  title: string | null
+  participants: ChatParticipantSummary[]
+  lastMessage?: {
+    id: string
+    content: string
+    createdAt: string
+    senderId: string | null
+    type: string
+  } | null
+}
+
+function VideoTile({
+  stream,
+  muted = false,
+  label,
+}: {
+  stream: MediaStream
+  muted?: boolean
+  label: string
+}) {
+  const videoRef = useRef<HTMLVideoElement>(null)
+
+  useEffect(() => {
+    if (videoRef.current) {
+      videoRef.current.srcObject = stream
+    }
+  }, [stream])
+
+  return (
+    <div className="video-tile">
+      <video ref={videoRef} autoPlay playsInline muted={muted} />
+      <div className="video-label">{label}</div>
+    </div>
+  )
 }
 
 interface Message {
   id: string
-  username: string
+  chatId?: string
+  senderId?: string | null
+  senderName?: string
   content: string
   timestamp: Date | string
   type: 'user' | 'system' | 'bot'
 }
-
-interface ChatUser {
-  id: string
-  name: string
-  initials: string
-  preview: string
-  time: string
-  online: boolean
-}
-
-// Demo chat users
-const demoUsers: ChatUser[] = [
-  { id: '1', name: 'John Smith', initials: 'JS', preview: 'Hey, how are you doing?', time: '10:30 AM', online: true },
-  { id: '2', name: 'Mary Johnson', initials: 'MJ', preview: 'See you tomorrow!', time: 'Yesterday', online: true },
-  { id: '3', name: 'Robert Brown', initials: 'RB', preview: 'Thanks for your help!', time: 'Yesterday', online: false },
-  { id: '4', name: 'Emily Wilson', initials: 'EW', preview: 'Did you see the new movie?', time: 'Wednesday', online: true },
-]
 
 // Styles
 const styles = `
@@ -492,6 +531,28 @@ const styles = `
     background: #333;
   }
 
+  .auth-error {
+    width: 100%;
+    margin: 0 0 10px;
+    padding: 8px 10px;
+    border-radius: 6px;
+    background: #ef4444;
+    color: #fff;
+    font-size: 0.8rem;
+    text-align: center;
+    font-weight: 600;
+  }
+
+  .auth-toggle {
+    margin-top: 10px;
+    background: transparent;
+    border: none;
+    color: #fff;
+    font-size: 0.8rem;
+    text-decoration: underline;
+    cursor: pointer;
+  }
+
   .login-card::before {
     content: "";
     position: absolute;
@@ -635,6 +696,93 @@ const styles = `
     flex-shrink: 0;
   }
 
+  .user-list {
+    margin-top: 1rem;
+    padding-top: 0.75rem;
+    border-top: 1px dashed var(--border-color);
+  }
+
+  .user-list-title {
+    font-size: 0.85rem;
+    letter-spacing: 0.3px;
+    text-transform: uppercase;
+    opacity: 0.6;
+    margin: 0 0 0.5rem 0.2rem;
+  }
+
+  .chat-section-title {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin: 1rem 0 0.5rem;
+    font-size: 0.85rem;
+    letter-spacing: 0.3px;
+    text-transform: uppercase;
+    opacity: 0.7;
+  }
+
+  .chat-action {
+    border: none;
+    background: rgba(106, 17, 203, 0.15);
+    color: var(--primary-color);
+    padding: 0.3rem 0.6rem;
+    border-radius: 999px;
+    font-size: 0.7rem;
+    cursor: pointer;
+  }
+
+  .chat-action:hover {
+    background: rgba(106, 17, 203, 0.25);
+  }
+
+  .user-item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.6rem 0.7rem;
+    border-radius: 10px;
+    transition: all 0.3s ease;
+    cursor: pointer;
+  }
+
+  .user-item:hover {
+    background-color: var(--bg-color);
+  }
+
+  .user-avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-weight: 700;
+    font-size: 0.9rem;
+    flex-shrink: 0;
+    background: linear-gradient(45deg, var(--primary-color), var(--secondary-color));
+  }
+
+  .user-info {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+  }
+
+  .user-name {
+    font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .user-id {
+    font-size: 0.78rem;
+    opacity: 0.6;
+    word-break: break-all;
+    font-family: Consolas, 'Courier New', monospace;
+  }
+
   .chat-main {
     flex: 1;
     display: flex;
@@ -728,6 +876,13 @@ const styles = `
     position: relative;
     animation: messageSlide 0.3s ease;
     word-wrap: break-word;
+  }
+
+  .message-sender {
+    font-size: 0.75rem;
+    font-weight: 600;
+    opacity: 0.7;
+    margin-bottom: 0.35rem;
   }
 
   @keyframes messageSlide {
@@ -830,7 +985,6 @@ const styles = `
     transform: none;
   }
 
-  .random-chat-btn,
   .ai-chat-btn {
     position: fixed;
     width: 60px;
@@ -847,21 +1001,9 @@ const styles = `
     justify-content: center;
   }
 
-  .random-chat-btn {
-    bottom: 30px;
-    right: 30px;
-    background: linear-gradient(45deg, var(--accent-color), var(--primary-color));
-    box-shadow: 0 4px 15px rgba(255, 51, 102, 0.4);
-  }
-
-  .random-chat-btn:hover {
-    transform: scale(1.1);
-    box-shadow: 0 6px 20px rgba(255, 51, 102, 0.6);
-  }
-
   .ai-chat-btn {
     bottom: 30px;
-    right: 100px;
+    right: 30px;
     background: linear-gradient(45deg, var(--secondary-color), var(--accent-color));
     box-shadow: 0 4px 15px rgba(37, 117, 252, 0.4);
   }
@@ -924,6 +1066,102 @@ const styles = `
 
   .info-content p {
     margin-bottom: 1rem;
+  }
+
+  .about-developer {
+    margin-top: 2rem;
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+    flex-wrap: wrap;
+    position: relative;
+    isolation: isolate;
+    overflow: hidden;
+    background: linear-gradient(135deg, rgba(106, 17, 203, 0.08), rgba(37, 117, 252, 0.08));
+    border: 1px solid rgba(106, 17, 203, 0.25);
+    border-radius: 12px;
+    padding: 1.5rem;
+    box-shadow: var(--shadow), 0 12px 30px rgba(37, 117, 252, 0.12);
+    transform-style: preserve-3d;
+    animation: devFloat 6s ease-in-out infinite;
+    transition: transform 0.5s ease, box-shadow 0.5s ease;
+  }
+
+  .about-developer::before {
+    content: '';
+    position: absolute;
+    inset: -40%;
+    background: conic-gradient(
+      from 180deg at 50% 50%,
+      rgba(106, 17, 203, 0.45),
+      rgba(37, 117, 252, 0.45),
+      rgba(255, 51, 102, 0.45),
+      rgba(106, 17, 203, 0.45)
+    );
+    filter: blur(28px);
+    opacity: 0.35;
+    z-index: -2;
+    animation: devHalo 14s linear infinite;
+  }
+
+  .about-developer::after {
+    content: '';
+    position: absolute;
+    inset: 1px;
+    border-radius: 11px;
+    background: radial-gradient(120px 80px at 12% 20%, rgba(255, 255, 255, 0.3), transparent 60%);
+    opacity: 0.6;
+    z-index: -1;
+    pointer-events: none;
+  }
+
+  .about-developer:hover {
+    transform: translateY(-6px) rotateX(2deg) rotateY(-2deg);
+    box-shadow: 0 18px 40px rgba(37, 117, 252, 0.22), 0 0 0 1px rgba(106, 17, 203, 0.35);
+  }
+
+  @keyframes devFloat {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-6px); }
+  }
+
+  @keyframes devHalo {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+  }
+
+  .about-photo {
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 3px solid var(--primary-color);
+    box-shadow: var(--shadow);
+  }
+
+  .about-dev-text h3 {
+    margin: 0 0 0.25rem 0;
+    font-size: 1.2rem;
+  }
+
+  .about-dev-text .dev-title {
+    font-weight: 600;
+    color: var(--secondary-color);
+    margin-bottom: 0.5rem;
+  }
+
+  @media (max-width: 600px) {
+    .about-developer {
+      justify-content: center;
+      text-align: center;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .about-developer,
+    .about-developer::before {
+      animation: none;
+    }
   }
 
   .contact-form {
@@ -1020,6 +1258,129 @@ const styles = `
   .connection-status .dot.connected { background-color: #22c55e; }
   .connection-status .dot.disconnected { background-color: #ef4444; }
 
+  .video-panel {
+    display: grid;
+    gap: 12px;
+    padding: 16px;
+    background: rgba(0, 0, 0, 0.6);
+    border-bottom: 1px solid var(--border-color);
+  }
+
+  .video-grid {
+    display: grid;
+    gap: 12px;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  }
+
+  .video-tile {
+    position: relative;
+    background: #000;
+    border-radius: 12px;
+    overflow: hidden;
+    min-height: 160px;
+  }
+
+  .video-tile video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .video-label {
+    position: absolute;
+    bottom: 8px;
+    left: 8px;
+    background: rgba(0, 0, 0, 0.6);
+    color: #fff;
+    font-size: 0.75rem;
+    padding: 4px 8px;
+    border-radius: 999px;
+  }
+
+  .call-controls {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+
+  .call-btn {
+    border: none;
+    padding: 8px 14px;
+    border-radius: 999px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+
+  .call-btn.primary {
+    background: var(--secondary-color);
+    color: #fff;
+  }
+
+  .call-btn.danger {
+    background: #ef4444;
+    color: #fff;
+  }
+
+  .call-modal {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1200;
+  }
+
+  .call-modal-card {
+    width: min(480px, 92vw);
+    background: var(--card-bg);
+    border-radius: 16px;
+    padding: 20px;
+    box-shadow: var(--shadow);
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+
+  .call-modal-card h3 {
+    margin: 0;
+  }
+
+  .call-option {
+    display: flex;
+    gap: 10px;
+  }
+
+  .call-option button {
+    flex: 1;
+    padding: 10px;
+    border-radius: 10px;
+    border: 2px solid transparent;
+    background: var(--bg-color);
+    color: var(--text-color);
+    font-weight: 600;
+    cursor: pointer;
+  }
+
+  .call-option button.active {
+    border-color: var(--secondary-color);
+    background: rgba(37, 117, 252, 0.15);
+  }
+
+  .call-input {
+    width: 100%;
+    padding: 10px 12px;
+    border-radius: 10px;
+    border: 1px solid var(--border-color);
+    background: var(--bg-color);
+    color: var(--text-color);
+  }
+
+  .call-error {
+    color: #ef4444;
+    font-size: 0.85rem;
+  }
+
   @media (max-width: 768px) {
     .navbar { padding: 1rem 3%; }
     .nav-links { display: none; }
@@ -1030,29 +1391,42 @@ const styles = `
     .chat-sidebar { width: 100%; border-right: none; border-bottom: 1px solid var(--border-color); max-height: 200px; }
     .message { max-width: 90%; }
     .ai-chat-btn { right: 30px; bottom: 100px; }
-    .random-chat-btn { bottom: 30px; }
   }
 `
 
 export default function GetSpeak() {
   // Theme - use lazy initialization
-  const [isDark, setIsDark] = useState(() => {
-    if (typeof window !== 'undefined') {
-      const savedTheme = localStorage.getItem('theme')
-      if (savedTheme === 'dark') {
-        document.body.setAttribute('data-theme', 'dark')
-        return true
-      }
-    }
-    return false
-  })
+  const [isDark, setIsDark] = useState(false)
 
   // Navigation
   const [activeSection, setActiveSection] = useState('home')
 
   // User
   const [username, setUsername] = useState('')
-  const [isUsernameSet, setIsUsernameSet] = useState(false)
+  const sessionIdRef = useRef<string | null>(null)
+  const hasJoinedRef = useRef(false)
+  const canReceiveRef = useRef(false)
+
+  const [authUser, setAuthUser] = useState<AuthUser | null>(null)
+  const [authLoading, setAuthLoading] = useState(true)
+  const [authMode, setAuthMode] = useState<'login' | 'register'>('login')
+  const [authError, setAuthError] = useState<string | null>(null)
+
+  const [loginEmail, setLoginEmail] = useState('')
+  const [loginPassword, setLoginPassword] = useState('')
+  const [registerName, setRegisterName] = useState('')
+  const [registerEmail, setRegisterEmail] = useState('')
+  const [registerPassword, setRegisterPassword] = useState('')
+
+  const [isCallModalOpen, setIsCallModalOpen] = useState(false)
+  const [callMode, setCallMode] = useState<'1to1' | 'group'>('1to1')
+  const [roomId, setRoomId] = useState('')
+  const [callError, setCallError] = useState<string | null>(null)
+  const [callActive, setCallActive] = useState(false)
+  const [localStream, setLocalStream] = useState<MediaStream | null>(null)
+  const [remoteStreams, setRemoteStreams] = useState<Array<{ id: string; stream: MediaStream }>>([])
+  const localStreamRef = useRef<MediaStream | null>(null)
+  const peerConnectionsRef = useRef<Map<string, RTCPeerConnection>>(new Map())
 
   // Socket - use ref for socket instance
   const socketRef = useRef<Socket | null>(null)
@@ -1062,8 +1436,10 @@ export default function GetSpeak() {
   // Chat
   const [messages, setMessages] = useState<Message[]>([])
   const [inputMessage, setInputMessage] = useState('')
-  const [currentChatType, setCurrentChatType] = useState<'global' | 'ai' | 'user'>('global')
-  const [selectedChatUser, setSelectedChatUser] = useState<ChatUser | null>(null)
+  const [currentChatType, setCurrentChatType] = useState<'global' | 'direct' | 'group' | 'ai'>('global')
+  const [chats, setChats] = useState<ChatSummary[]>([])
+  const [activeChatId, setActiveChatId] = useState<string | null>(null)
+  const [isChatsLoading, setIsChatsLoading] = useState(false)
   const [isTyping, setIsTyping] = useState(false)
 
   // AI Chat history
@@ -1072,6 +1448,106 @@ export default function GetSpeak() {
   // Refs
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const messagesContainerRef = useRef<HTMLDivElement>(null)
+  const activeChatIdRef = useRef<string | null>(null)
+  const currentChatTypeRef = useRef<'global' | 'direct' | 'group' | 'ai'>('global')
+
+  const logSessionStart = useCallback(async (name: string, userId?: string) => {
+    if (!name || sessionIdRef.current) return
+    try {
+      const response = await fetch('/api/sessions/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username: name, userId }),
+      })
+      if (!response.ok) return
+      const data = await response.json()
+      if (data?.sessionId) {
+        sessionIdRef.current = data.sessionId
+      }
+    } catch (error) {
+      console.error('Failed to log session start', error)
+    }
+  }, [])
+
+  const logSessionEnd = useCallback(async () => {
+    const sessionId = sessionIdRef.current
+    if (!sessionId) return
+    sessionIdRef.current = null
+    try {
+      await fetch('/api/sessions/logout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ sessionId }),
+        keepalive: true,
+      })
+    } catch (error) {
+      console.error('Failed to log session end', error)
+    }
+  }, [])
+
+  const loadChats = useCallback(async () => {
+    if (!authUser) return
+    setIsChatsLoading(true)
+    try {
+      const response = await fetch('/api/chats')
+      if (!response.ok) return
+      const data = await response.json()
+      const nextChats: ChatSummary[] = data?.chats ?? []
+      setChats(nextChats)
+
+      if (!activeChatId || !nextChats.find(chat => chat.id === activeChatId)) {
+        const globalChat = nextChats.find(chat => chat.type === 'GLOBAL')
+        if (globalChat) {
+          setActiveChatId(globalChat.id)
+          setCurrentChatType('global')
+        } else {
+          setActiveChatId(null)
+        }
+      }
+    } catch (error) {
+      console.error('Failed to load chats', error)
+    } finally {
+      setIsChatsLoading(false)
+    }
+  }, [activeChatId, authUser])
+
+  const loadMessages = useCallback(async (chatId: string) => {
+    if (!chatId) return
+    try {
+      const response = await fetch(`/api/chats/${chatId}/messages?limit=50`)
+      if (!response.ok) return
+      const data = await response.json()
+      const loaded = Array.isArray(data?.messages) ? data.messages : []
+      const mapped: Message[] = loaded
+        .slice()
+        .reverse()
+        .map((msg: any) => ({
+          id: msg.id,
+          chatId,
+          senderId: msg.sender?.id ?? null,
+          senderName: msg.sender?.name || msg.sender?.username || 'Unknown',
+          content: msg.content,
+          timestamp: msg.createdAt,
+          type: msg.type === 'SYSTEM' ? 'system' : 'user',
+        }))
+      setMessages(mapped)
+    } catch (error) {
+      console.error('Failed to load messages', error)
+    }
+  }, [])
+
+  const getChatDisplayName = useCallback(
+    (chat: ChatSummary | null) => {
+      if (!chat) return 'Chat'
+      if (chat.type === 'GLOBAL') return 'Global Chat'
+      if (chat.type === 'DIRECT') {
+        const other = chat.participants.find(p => p.id !== authUser?.id)
+        return other?.name || other?.username || 'Direct Chat'
+      }
+      return chat.title || 'Group Chat'
+    },
+    [authUser]
+  )
 
   // Scroll to bottom
   const scrollToBottom = useCallback(() => {
@@ -1079,8 +1555,93 @@ export default function GetSpeak() {
   }, [])
 
   useEffect(() => {
+    const handleBeforeUnload = () => {
+      void logSessionEnd()
+    }
+
+    window.addEventListener('beforeunload', handleBeforeUnload)
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload)
+    }
+  }, [logSessionEnd])
+
+  useEffect(() => {
     scrollToBottom()
   }, [messages, scrollToBottom])
+
+  useEffect(() => {
+    activeChatIdRef.current = activeChatId
+  }, [activeChatId])
+
+  useEffect(() => {
+    currentChatTypeRef.current = currentChatType
+  }, [currentChatType])
+
+  useEffect(() => {
+    let active = true
+    const loadUser = async () => {
+      try {
+        const response = await fetch('/api/auth/me')
+        if (!response.ok) {
+          if (active) {
+            setAuthUser(null)
+            setAuthLoading(false)
+          }
+          return
+        }
+        const data = await response.json()
+        if (active) {
+          setAuthUser(data?.user ?? null)
+        }
+      } catch (error) {
+        if (active) {
+          setAuthUser(null)
+        }
+      } finally {
+        if (active) {
+          setAuthLoading(false)
+        }
+      }
+    }
+    void loadUser()
+    return () => {
+      active = false
+    }
+  }, [])
+
+  useEffect(() => {
+    if (!authUser) {
+      setChats([])
+      setActiveChatId(null)
+      return
+    }
+    void loadChats()
+  }, [authUser, loadChats])
+
+  useEffect(() => {
+    if (!activeChatId || currentChatType === 'ai') return
+    void loadMessages(activeChatId)
+  }, [activeChatId, currentChatType, loadMessages])
+
+  useEffect(() => {
+    canReceiveRef.current = Boolean(authUser && isConnected)
+    if (!authUser) {
+      setUsername('')
+      hasJoinedRef.current = false
+      return
+    }
+    const displayName = authUser.name || authUser.email
+    setUsername(displayName)
+  }, [authUser, isConnected])
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    const savedTheme = localStorage.getItem('theme')
+    const prefersDark = window.matchMedia?.('(prefers-color-scheme: dark)')?.matches
+    const shouldDark = savedTheme === 'dark' || (!savedTheme && prefersDark)
+    setIsDark(Boolean(shouldDark))
+    document.body.setAttribute('data-theme', shouldDark ? 'dark' : 'light')
+  }, [])
 
   // Toggle theme
   const toggleTheme = () => {
@@ -1091,6 +1652,194 @@ export default function GetSpeak() {
     } else {
       document.body.setAttribute('data-theme', 'light')
       localStorage.setItem('theme', 'light')
+    }
+  }
+
+  const handleLogin = async () => {
+    setAuthError(null)
+    if (!loginEmail.trim() || !loginPassword) {
+      setAuthError('Email and password are required.')
+      return
+    }
+    try {
+      const response = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: loginEmail.trim(), password: loginPassword }),
+      })
+      const data = await response.json()
+      if (!response.ok) {
+        setAuthError(data?.error || 'Login failed.')
+        return
+      }
+      setAuthUser(data.user)
+      setLoginPassword('')
+      setActiveSection('chat')
+    } catch (error) {
+      setAuthError('Login failed.')
+    }
+  }
+
+  const handleRegister = async () => {
+    setAuthError(null)
+    if (!registerEmail.trim() || !registerPassword) {
+      setAuthError('Email and password are required.')
+      return
+    }
+    try {
+      const response = await fetch('/api/auth/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: registerEmail.trim(),
+          password: registerPassword,
+          name: registerName.trim(),
+        }),
+      })
+      const data = await response.json()
+      if (!response.ok) {
+        setAuthError(data?.error || 'Registration failed.')
+        return
+      }
+      setAuthUser(data.user)
+      setRegisterPassword('')
+      setActiveSection('chat')
+    } catch (error) {
+      setAuthError('Registration failed.')
+    }
+  }
+
+  const handleLogout = async () => {
+    setAuthError(null)
+    try {
+      await fetch('/api/auth/logout', { method: 'POST' })
+    } catch (error) {
+      console.error('Failed to logout', error)
+    }
+    void logSessionEnd()
+    socketRef.current?.emit('logout')
+    cleanupCall()
+    setAuthUser(null)
+    setMessages([])
+    setOnlineUsers([])
+    setChats([])
+    setActiveChatId(null)
+    setCurrentChatType('global')
+    setActiveSection('login')
+    setAuthMode('login')
+  }
+
+  const cleanupCall = useCallback(() => {
+    peerConnectionsRef.current.forEach((pc) => pc.close())
+    peerConnectionsRef.current.clear()
+    setRemoteStreams([])
+    if (localStreamRef.current) {
+      localStreamRef.current.getTracks().forEach((track) => track.stop())
+      localStreamRef.current = null
+    }
+    setLocalStream(null)
+    setCallActive(false)
+  }, [])
+
+  const createPeerConnection = useCallback(
+    (peerId: string, isInitiator: boolean) => {
+      const existing = peerConnectionsRef.current.get(peerId)
+      if (existing) return existing
+
+      const pc = new RTCPeerConnection({
+        iceServers: [{ urls: 'stun:stun.l.google.com:19302' }],
+      })
+
+      if (localStreamRef.current) {
+        localStreamRef.current.getTracks().forEach((track) => {
+          pc.addTrack(track, localStreamRef.current as MediaStream)
+        })
+      }
+
+      pc.onicecandidate = (event) => {
+        if (event.candidate && socketRef.current) {
+          socketRef.current.emit('webrtc-ice-candidate', {
+            to: peerId,
+            candidate: event.candidate,
+          })
+        }
+      }
+
+      pc.ontrack = (event) => {
+        const [stream] = event.streams
+        setRemoteStreams((prev) => {
+          if (prev.find((item) => item.id === peerId)) return prev
+          return [...prev, { id: peerId, stream }]
+        })
+      }
+
+      pc.onconnectionstatechange = () => {
+        if (pc.connectionState === 'disconnected' || pc.connectionState === 'failed') {
+          pc.close()
+          peerConnectionsRef.current.delete(peerId)
+          setRemoteStreams((prev) => prev.filter((item) => item.id !== peerId))
+        }
+      }
+
+      peerConnectionsRef.current.set(peerId, pc)
+
+      if (isInitiator) {
+        pc.createOffer()
+          .then((offer) => pc.setLocalDescription(offer))
+          .then(() => {
+            if (!socketRef.current || !pc.localDescription) return
+            socketRef.current.emit('webrtc-offer', {
+              to: peerId,
+              offer: pc.localDescription,
+            })
+          })
+          .catch(() => {})
+      }
+
+      return pc
+    },
+    []
+  )
+
+  const startCall = useCallback(async () => {
+    setCallError(null)
+    if (!authUser) {
+      setCallError('Login required.')
+      return
+    }
+    if (!roomId.trim()) {
+      setCallError('Room code is required.')
+      return
+    }
+    if (!socketRef.current) {
+      setCallError('Socket not connected.')
+      return
+    }
+
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true })
+      localStreamRef.current = stream
+      setLocalStream(stream)
+      setCallActive(true)
+      setIsCallModalOpen(false)
+      socketRef.current.emit('join-room', { roomId: roomId.trim(), mode: callMode })
+    } catch (error) {
+      setCallError('Could not access camera/microphone.')
+    }
+  }, [authUser, callMode, roomId])
+
+  const endCall = useCallback(() => {
+    if (socketRef.current && roomId.trim()) {
+      socketRef.current.emit('leave-room', { roomId: roomId.trim() })
+    }
+    cleanupCall()
+  }, [cleanupCall, roomId])
+
+  const createRoomCode = () => {
+    const code = Math.random().toString(36).slice(2, 8)
+    setRoomId(code)
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(code).catch(() => {})
     }
   }
 
@@ -1113,7 +1862,8 @@ export default function GetSpeak() {
       reconnection: true,
       reconnectionAttempts: 5,
       reconnectionDelay: 1000,
-      timeout: 10000
+      timeout: 10000,
+      withCredentials: true
     })
 
     socketRef.current = socketInstance
@@ -1125,77 +1875,218 @@ export default function GetSpeak() {
 
     const handleDisconnect = () => {
       setIsConnected(false)
+      hasJoinedRef.current = false
+      canReceiveRef.current = false
       console.log('Disconnected from socket server')
+      cleanupCall()
+      void logSessionEnd()
     }
 
-    const handleMessage = (msg: Message) => {
+    const handleChatMessage = (payload: {
+      chatId: string
+      message: {
+        id: string
+        content: string
+        createdAt: string
+        type: string
+        sender?: { id: string; username?: string | null; name?: string | null } | null
+      }
+    }) => {
+      if (!canReceiveRef.current) return
+      if (!payload?.chatId || payload.chatId !== activeChatIdRef.current) return
+      const msg: Message = {
+        id: payload.message.id,
+        chatId: payload.chatId,
+        senderId: payload.message.sender?.id ?? null,
+        senderName:
+          payload.message.sender?.name ||
+          payload.message.sender?.username ||
+          'Unknown',
+        content: payload.message.content,
+        timestamp: payload.message.createdAt,
+        type: payload.message.type === 'SYSTEM' ? 'system' : 'user'
+      }
       setMessages(prev => [...prev, msg])
-    }
-
-    const handleUserJoined = (data: { user: User; message: Message }) => {
-      setMessages(prev => [...prev, data.message])
-      setOnlineUsers(prev => {
-        if (!prev.find(u => u.id === data.user.id)) {
-          return [...prev, data.user]
-        }
-        return prev
+      setChats(prev => {
+        const updated = prev.map(chat =>
+          chat.id === payload.chatId
+            ? {
+                ...chat,
+                lastMessage: {
+                  id: payload.message.id,
+                  content: payload.message.content,
+                  createdAt: payload.message.createdAt,
+                  senderId: payload.message.sender?.id ?? null,
+                  type: payload.message.type
+                }
+              }
+            : chat
+        )
+        const moved = updated.sort((a, b) => {
+          const aTime = a.lastMessage?.createdAt
+            ? new Date(a.lastMessage.createdAt).getTime()
+            : 0
+          const bTime = b.lastMessage?.createdAt
+            ? new Date(b.lastMessage.createdAt).getTime()
+            : 0
+          return bTime - aTime
+        })
+        return moved
       })
     }
 
-    const handleUserLeft = (data: { user: User; message: Message }) => {
-      setMessages(prev => [...prev, data.message])
-      setOnlineUsers(prev => prev.filter(u => u.id !== data.user.id))
+      const handleUserJoined = (data: { user: User; message?: { content: string } }) => {
+        if (canReceiveRef.current && currentChatTypeRef.current === 'global') {
+          const displayName = data.user.username || data.user.name || 'Someone'
+          setMessages(prev => [
+            ...prev,
+            {
+              id: `sys-${Date.now()}`,
+              content: data.message?.content || `${displayName} joined.`,
+              timestamp: new Date(),
+              type: 'system'
+            }
+          ])
+        }
+        setOnlineUsers(prev => {
+          if (!prev.find(u => u.id === data.user.id)) {
+            return [...prev, data.user]
+          }
+          return prev
+        })
+      }
+
+      const handleUserLeft = (data: { user: User; message?: { content: string } }) => {
+        if (canReceiveRef.current && currentChatTypeRef.current === 'global') {
+          const displayName = data.user.username || data.user.name || 'Someone'
+          setMessages(prev => [
+            ...prev,
+            {
+              id: `sys-${Date.now()}`,
+              content: data.message?.content || `${displayName} left.`,
+              timestamp: new Date(),
+              type: 'system'
+            }
+          ])
+        }
+        setOnlineUsers(prev => prev.filter(u => u.id !== data.user.id))
+      }
+
+      const handleUsersList = (data: { users: User[] }) => {
+        setOnlineUsers(data.users)
+      }
+
+    const handleRoomPeers = (data: { peers: string[] }) => {
+      if (!callActive || !socketRef.current) return
+      data.peers.forEach((peerId) => {
+        createPeerConnection(peerId, true)
+      })
     }
 
-    const handleUsersList = (data: { users: User[] }) => {
-      setOnlineUsers(data.users)
+    const handlePeerJoined = (data: { peerId: string }) => {
+      if (!callActive) return
+      // Wait for the new peer to initiate offers
+      createPeerConnection(data.peerId, false)
+    }
+
+    const handlePeerLeft = (data: { peerId: string }) => {
+      const pc = peerConnectionsRef.current.get(data.peerId)
+      if (pc) pc.close()
+      peerConnectionsRef.current.delete(data.peerId)
+      setRemoteStreams((prev) => prev.filter((item) => item.id !== data.peerId))
+    }
+
+    const handleOffer = async (data: { from: string; offer: RTCSessionDescriptionInit }) => {
+      if (!callActive) return
+      const pc = createPeerConnection(data.from, false)
+      await pc.setRemoteDescription(new RTCSessionDescription(data.offer))
+      const answer = await pc.createAnswer()
+      await pc.setLocalDescription(answer)
+      socketRef.current?.emit('webrtc-answer', { to: data.from, answer })
+    }
+
+    const handleAnswer = async (data: { from: string; answer: RTCSessionDescriptionInit }) => {
+      const pc = peerConnectionsRef.current.get(data.from)
+      if (!pc) return
+      await pc.setRemoteDescription(new RTCSessionDescription(data.answer))
+    }
+
+    const handleIceCandidate = async (data: { from: string; candidate: RTCIceCandidateInit }) => {
+      const pc = peerConnectionsRef.current.get(data.from)
+      if (!pc) return
+      await pc.addIceCandidate(new RTCIceCandidate(data.candidate))
     }
 
     socketInstance.on('connect', handleConnect)
     socketInstance.on('disconnect', handleDisconnect)
-    socketInstance.on('message', handleMessage)
+    socketInstance.on('chat-message', handleChatMessage)
     socketInstance.on('user-joined', handleUserJoined)
     socketInstance.on('user-left', handleUserLeft)
     socketInstance.on('users-list', handleUsersList)
+    socketInstance.on('room-peers', handleRoomPeers)
+    socketInstance.on('peer-joined', handlePeerJoined)
+    socketInstance.on('peer-left', handlePeerLeft)
+    socketInstance.on('webrtc-offer', handleOffer)
+    socketInstance.on('webrtc-answer', handleAnswer)
+    socketInstance.on('webrtc-ice-candidate', handleIceCandidate)
 
     return () => {
       socketInstance.off('connect', handleConnect)
       socketInstance.off('disconnect', handleDisconnect)
-      socketInstance.off('message', handleMessage)
+      socketInstance.off('chat-message', handleChatMessage)
       socketInstance.off('user-joined', handleUserJoined)
       socketInstance.off('user-left', handleUserLeft)
       socketInstance.off('users-list', handleUsersList)
+      socketInstance.off('room-peers', handleRoomPeers)
+      socketInstance.off('peer-joined', handlePeerJoined)
+      socketInstance.off('peer-left', handlePeerLeft)
+      socketInstance.off('webrtc-offer', handleOffer)
+      socketInstance.off('webrtc-answer', handleAnswer)
+      socketInstance.off('webrtc-ice-candidate', handleIceCandidate)
       socketInstance.disconnect()
     }
-  }, [])
+  }, [callActive, createPeerConnection, cleanupCall, logSessionEnd])
 
-  // Join chat
-  const handleJoin = () => {
-    if (socketRef.current && username.trim() && isConnected) {
-      socketRef.current.emit('join', { username: username.trim() })
-      setIsUsernameSet(true)
+    useEffect(() => {
+      if (!authUser || !isConnected || !socketRef.current) return
+      if (hasJoinedRef.current) return
+      const displayName = authUser.name || authUser.email
+      socketRef.current.emit('join', { username: displayName })
+      hasJoinedRef.current = true
+      setOnlineUsers(prev => {
+        if (prev.find(u => u.id === authUser.id)) return prev
+        return [
+          ...prev,
+          {
+            id: authUser.id,
+            username: authUser.username || displayName,
+            name: authUser.name
+          }
+        ]
+      })
+      void logSessionStart(displayName, authUser.id)
+    }, [authUser, isConnected, logSessionStart])
+
+  useEffect(() => {
+    if (!socketRef.current || !isConnected) return
+    if (!activeChatId || currentChatType === 'ai') return
+    socketRef.current.emit('join-chat', { chatId: activeChatId })
+    return () => {
+      socketRef.current?.emit('leave-chat', { chatId: activeChatId })
     }
-  }
+  }, [activeChatId, currentChatType, isConnected])
 
   // Send message
   const sendMessage = async () => {
     if (!inputMessage.trim()) return
+    if (!authUser) return
 
-    const timeString = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-
-    if (currentChatType === 'global') {
-      // Send to global chat via socket
-      if (socketRef.current && username.trim()) {
-        socketRef.current.emit('message', {
-          content: inputMessage.trim(),
-          username: username.trim()
-        })
-      }
-    } else if (currentChatType === 'ai') {
+    if (currentChatType === 'ai') {
       // Send to AI chat
       const userMessage: Message = {
         id: Date.now().toString(),
-        username: username || 'You',
+        senderId: authUser.id,
+        senderName: username || 'You',
         content: inputMessage.trim(),
         timestamp: new Date(),
         type: 'user'
@@ -1227,7 +2118,7 @@ export default function GetSpeak() {
             data?.error || data?.details || 'Sorry, I could not generate a response.'
           const aiErrorMessage: Message = {
             id: (Date.now() + 1).toString(),
-            username: 'AI Assistant',
+            senderName: 'AI Assistant',
             content: errorText,
             timestamp: new Date(),
             type: 'bot'
@@ -1238,7 +2129,7 @@ export default function GetSpeak() {
 
         const aiMessage: Message = {
           id: (Date.now() + 1).toString(),
-          username: 'AI Assistant',
+          senderName: 'AI Assistant',
           content: data.response || 'Sorry, I could not generate a response.',
           timestamp: new Date(),
           type: 'bot'
@@ -1251,12 +2142,20 @@ export default function GetSpeak() {
         setIsTyping(false)
         const errorMessage: Message = {
           id: (Date.now() + 1).toString(),
-          username: 'AI Assistant',
+          senderName: 'AI Assistant',
           content: 'Sorry, I encountered an error. Please try again.',
           timestamp: new Date(),
           type: 'bot'
         }
         setMessages(prev => [...prev, errorMessage])
+      }
+    } else {
+      if (!activeChatId) return
+      if (socketRef.current) {
+        socketRef.current.emit('chat-message', {
+          chatId: activeChatId,
+          content: inputMessage.trim()
+        })
       }
     }
 
@@ -1275,29 +2174,34 @@ export default function GetSpeak() {
   const switchToGlobalChat = () => {
     setActiveSection('chat')
     setCurrentChatType('global')
-    setSelectedChatUser(null)
-    setMessages([])
     setAiChatHistory([])
-    setMessages([
-      {
-        id: '1',
-        username: 'System',
-        content: 'Welcome to Global Chat! Messages here are visible to all connected users.',
-        timestamp: new Date(),
-        type: 'system'
-      }
-    ])
+    setMessages([])
+    const globalChat = chats.find(chat => chat.type === 'GLOBAL')
+    if (globalChat) {
+      setActiveChatId(globalChat.id)
+    } else {
+      setActiveChatId(null)
+      setMessages([
+        {
+          id: '1',
+          senderName: 'System',
+          content: 'Global chat is initializing. Please try again in a moment.',
+          timestamp: new Date(),
+          type: 'system'
+        }
+      ])
+    }
   }
 
   // Switch to AI chat
   const switchToAIChat = () => {
     setActiveSection('chat')
     setCurrentChatType('ai')
-    setSelectedChatUser(null)
+    setActiveChatId(null)
     setMessages([
       {
         id: '1',
-        username: 'AI Assistant',
+        senderName: 'AI Assistant',
         content: 'Hello! I am your AI assistant. How can I help you today?',
         timestamp: new Date(),
         type: 'bot'
@@ -1306,20 +2210,143 @@ export default function GetSpeak() {
     setAiChatHistory([])
   }
 
-  // Switch to demo user chat
-  const switchToUserChat = (user: ChatUser) => {
+  const switchToChat = (chat: ChatSummary) => {
     setActiveSection('chat')
-    setCurrentChatType('user')
-    setSelectedChatUser(user)
-    setMessages([
-      {
-        id: '1',
-        username: user.name,
-        content: `Hello! I'm ${user.name}. Nice to meet you!`,
-        timestamp: new Date(),
-        type: 'user'
+    setMessages([])
+    if (chat.type === 'GLOBAL') {
+      setCurrentChatType('global')
+    } else if (chat.type === 'DIRECT') {
+      setCurrentChatType('direct')
+    } else {
+      setCurrentChatType('group')
+    }
+    setActiveChatId(chat.id)
+    setAiChatHistory([])
+  }
+
+  const startDirectChat = async (targetId: string) => {
+    if (!authUser) return
+    if (targetId === authUser.id) {
+      showNotification('You cannot message yourself.', '#ef4444')
+      return
+    }
+    try {
+      const response = await fetch('/api/chats', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ type: 'direct', otherUserId: targetId })
+      })
+      const data = await response.json()
+      if (!response.ok) {
+        showNotification(data?.error || 'Failed to start chat.', '#ef4444')
+        return
       }
-    ])
+      const chat: ChatSummary = data.chat
+      setChats(prev => {
+        const exists = prev.find(item => item.id === chat.id)
+        if (exists) {
+          return prev.map(item => (item.id === chat.id ? chat : item))
+        }
+        return [chat, ...prev]
+      })
+      switchToChat(chat)
+    } catch (error) {
+      showNotification('Failed to start chat.', '#ef4444')
+    }
+  }
+
+  const createGroupChat = async () => {
+    if (!authUser) return
+    const title = window.prompt('Enter group name')
+    if (!title) return
+    const rawIds = window.prompt('Enter user IDs (comma separated)')
+    if (!rawIds) return
+    const participantIds = rawIds
+      .split(',')
+      .map(id => id.trim())
+      .filter(Boolean)
+
+    if (participantIds.length === 0) {
+      showNotification('Please enter at least one user ID.', '#ef4444')
+      return
+    }
+
+    try {
+      const response = await fetch('/api/chats', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ type: 'group', title, participantIds })
+      })
+      const data = await response.json()
+      if (!response.ok) {
+        showNotification(data?.error || 'Failed to create group.', '#ef4444')
+        return
+      }
+      const chat: ChatSummary = data.chat
+      setChats(prev => [chat, ...prev])
+      switchToChat(chat)
+    } catch (error) {
+      showNotification('Failed to create group.', '#ef4444')
+    }
+  }
+
+  const handleMoreOptions = async () => {
+    if (!authUser || currentChatType === 'ai') return
+    if (!activeChat) {
+      showNotification('Select a chat first.', '#ef4444')
+      return
+    }
+
+    const action = window.prompt('Type "block" to block a user or "report" to report.')
+    if (!action) return
+
+    if (action.toLowerCase() === 'block') {
+      let targetId = ''
+      if (activeChat.type === 'DIRECT') {
+        const other = activeChat.participants.find(p => p.id !== authUser.id)
+        targetId = other?.id || ''
+      } else {
+        targetId = window.prompt('Enter user ID to block') || ''
+      }
+      if (!targetId) return
+
+      const response = await fetch('/api/blocks', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: targetId })
+      })
+      if (!response.ok) {
+        const data = await response.json()
+        showNotification(data?.error || 'Failed to block user.', '#ef4444')
+        return
+      }
+      showNotification('User blocked.')
+    } else if (action.toLowerCase() === 'report') {
+      let targetId = ''
+      if (activeChat.type === 'DIRECT') {
+        const other = activeChat.participants.find(p => p.id !== authUser.id)
+        targetId = other?.id || ''
+      } else {
+        targetId = window.prompt('Enter user ID to report') || ''
+      }
+      if (!targetId) return
+      const reason = window.prompt('Reason for report?') || ''
+      if (!reason.trim()) {
+        showNotification('Report reason is required.', '#ef4444')
+        return
+      }
+      const response = await fetch('/api/reports', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ reportedId: targetId, reason })
+      })
+      if (!response.ok) {
+        const data = await response.json()
+        showNotification(data?.error || 'Failed to report user.', '#ef4444')
+        return
+      }
+      showNotification('Report submitted.')
+    }
   }
 
   // Show notification
@@ -1330,33 +2357,114 @@ export default function GetSpeak() {
     setTimeout(() => setNotification(null), 3000)
   }
 
-  // Render login prompt
+  const activeChat = activeChatId ? chats.find(chat => chat.id === activeChatId) : null
+  const activeChatTitle =
+    currentChatType === 'ai' ? 'AI Assistant' : getChatDisplayName(activeChat)
+  const isRealtimeChat = currentChatType !== 'ai'
+  const isInputDisabled =
+    isTyping || (isRealtimeChat && (!authUser || !isConnected || !activeChatId))
+  const headerIconClass =
+    currentChatType === 'ai'
+      ? 'fas fa-robot'
+      : activeChat?.type === 'DIRECT'
+      ? 'fas fa-user'
+      : activeChat?.type === 'GROUP'
+      ? 'fas fa-users'
+      : 'fas fa-globe'
+  const headerAvatarStyle =
+    currentChatType === 'ai'
+      ? { background: 'linear-gradient(45deg, #2575fc, #ff3366)' }
+      : activeChat?.type === 'DIRECT'
+      ? { background: 'linear-gradient(45deg, #10b981, #3b82f6)' }
+      : activeChat?.type === 'GROUP'
+      ? { background: 'linear-gradient(45deg, #f97316, #ec4899)' }
+      : { background: 'linear-gradient(45deg, #6a11cb, #2575fc)' }
+
+  // Render login/register
   const renderLoginPrompt = () => (
     <div className="login-section">
-      <h2 className="info-title">Welcome to Get Speak</h2>
+      {authUser ? (
+        <div className="info-container">
+          <h2 className="info-title">You are logged in</h2>
+          <div className="info-content">
+            <p>Signed in as {authUser.email}.</p>
+            <button type="button" className="btn btn-secondary" onClick={handleLogout}>
+              Logout
+            </button>
+          </div>
+        </div>
+      ) : (
+        <>
+      {authLoading ? (
+        <h2 className="info-title">Checking session...</h2>
+      ) : (
+        <h2 className="info-title">{authMode === 'login' ? 'Login' : 'Create Account'}</h2>
+      )}
       <div className="login-container">
         <div className="login-card expanded">
           <div className="login-title">
-            <span className="login-text">Join Chat</span>
+            <span className="login-text">{authMode === 'login' ? 'Welcome Back' : 'Join Get Speak'}</span>
           </div>
           <div className="login-form" style={{ opacity: 1, transform: 'translateY(0) scale(1)' }}>
+            {authMode === 'register' && (
+              <div className="input-group">
+                <input
+                  type="text"
+                  className="login-input"
+                  placeholder="Full name"
+                  value={registerName}
+                  onChange={(e) => setRegisterName(e.target.value)}
+                />
+              </div>
+            )}
             <div className="input-group">
               <input
-                type="text"
+                type="email"
                 className="login-input"
-                placeholder="Enter your username"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-                onKeyPress={(e) => e.key === 'Enter' && handleJoin()}
+                placeholder="Email address"
+                value={authMode === 'login' ? loginEmail : registerEmail}
+                onChange={(e) =>
+                  authMode === 'login'
+                    ? setLoginEmail(e.target.value)
+                    : setRegisterEmail(e.target.value)
+                }
               />
             </div>
+            <div className="input-group">
+              <input
+                type="password"
+                className="login-input"
+                placeholder="Password"
+                value={authMode === 'login' ? loginPassword : registerPassword}
+                onChange={(e) =>
+                  authMode === 'login'
+                    ? setLoginPassword(e.target.value)
+                    : setRegisterPassword(e.target.value)
+                }
+              />
+            </div>
+            {authError && (
+              <div className="auth-error">{authError}</div>
+            )}
             <button
               type="button"
               className="login-btn"
-              onClick={handleJoin}
-              disabled={!isConnected || !username.trim()}
+              onClick={authMode === 'login' ? handleLogin : handleRegister}
+              disabled={authLoading}
             >
-              {isConnected ? 'Join Chat' : 'Connecting...'}
+              {authMode === 'login' ? 'Login' : 'Create Account'}
+            </button>
+            <button
+              type="button"
+              className="auth-toggle"
+              onClick={() => {
+                setAuthError(null)
+                setAuthMode(authMode === 'login' ? 'register' : 'login')
+              }}
+            >
+              {authMode === 'login'
+                ? 'Need an account? Create one'
+                : 'Already have an account? Login'}
             </button>
           </div>
         </div>
@@ -1374,6 +2482,8 @@ export default function GetSpeak() {
         />
         {isConnected ? 'Connected to server' : 'Connecting to server...'}
       </p>
+        </>
+      )}
     </div>
   )
 
@@ -1383,10 +2493,16 @@ export default function GetSpeak() {
       <h1 className="home-title">Get Speak</h1>
       <p className="home-subtitle">Connect with people around the world instantly</p>
       <div className="home-buttons">
-        <button className="btn btn-primary" onClick={isUsernameSet ? switchToGlobalChat : () => setActiveSection('login')}>
-          {isUsernameSet ? 'Start Chatting' : 'Join Now'}
+        <button className="btn btn-primary" onClick={authUser ? switchToGlobalChat : () => setActiveSection('login')}>
+          {authUser ? 'Start Chatting' : 'Login'}
         </button>
-        <button className="btn btn-secondary" onClick={() => setActiveSection('login')}>
+        <button
+          className="btn btn-secondary"
+          onClick={() => {
+            setAuthMode('register')
+            setActiveSection('login')
+          }}
+        >
           Sign Up
         </button>
       </div>
@@ -1425,8 +2541,38 @@ export default function GetSpeak() {
   )
 
   // Render chat section
-  const renderChat = () => (
-    <div className="chat-container">
+  const renderChat = () => {
+    if (authLoading) {
+      return (
+        <div className="info-container">
+          <h2 className="info-title">Loading...</h2>
+          <div className="info-content">
+            <p>Checking your session.</p>
+          </div>
+        </div>
+      )
+    }
+
+    if (!authUser) {
+      return (
+        <div className="info-container">
+          <h2 className="info-title">Login Required</h2>
+          <div className="info-content">
+            <p>Please login to access the chat.</p>
+            <button
+              type="button"
+              className="btn btn-primary"
+              onClick={() => setActiveSection('login')}
+            >
+              Go to Login
+            </button>
+          </div>
+        </div>
+      )
+    }
+
+    return (
+      <div className="chat-container">
       <div className="chat-sidebar">
         <div className="chat-search">
           <i className="fas fa-search"></i>
@@ -1451,38 +2597,87 @@ export default function GetSpeak() {
           </div>
 
           {/* AI Assistant */}
-          <div
-            className={`chat-item ${currentChatType === 'ai' ? 'active' : ''}`}
-            onClick={switchToAIChat}
-          >
-            <div className="chat-avatar" style={{ background: 'linear-gradient(45deg, #2575fc, #ff3366)' }}>
+            <div
+              className={`chat-item ${currentChatType === 'ai' ? 'active' : ''}`}
+              onClick={switchToAIChat}
+            >
+              <div className="chat-avatar" style={{ background: 'linear-gradient(45deg, #2575fc, #ff3366)' }}>
               <i className="fas fa-robot"></i>
             </div>
             <div className="chat-info">
               <div className="chat-name">AI Assistant</div>
               <div className="chat-preview">Ask me anything!</div>
             </div>
-            <div className="chat-time">
-              <span style={{ display: 'inline-block', width: 8, height: 8, borderRadius: '50%', backgroundColor: '#22c55e' }} />
-            </div>
-          </div>
-
-          {/* Demo Users */}
-          {demoUsers.map(user => (
-            <div
-              key={user.id}
-              className={`chat-item ${selectedChatUser?.id === user.id ? 'active' : ''}`}
-              onClick={() => switchToUserChat(user)}
-            >
-              <div className="chat-avatar">{user.initials}</div>
-              <div className="chat-info">
-                <div className="chat-name">{user.name}</div>
-                <div className="chat-preview">{user.preview}</div>
+              <div className="chat-time">
+                <span style={{ display: 'inline-block', width: 8, height: 8, borderRadius: '50%', backgroundColor: '#22c55e' }} />
               </div>
-              <div className="chat-time">{user.time}</div>
             </div>
-          ))}
-        </div>
+
+            <div className="chat-section-title">
+              Your Chats
+              <button type="button" className="chat-action" onClick={createGroupChat}>
+                + New Group
+              </button>
+            </div>
+            {isChatsLoading && <div className="chat-preview">Loading chats...</div>}
+            {chats.filter(chat => chat.type !== 'GLOBAL').length === 0 && !isChatsLoading && (
+              <div className="chat-preview">No chats yet.</div>
+            )}
+            {chats
+              .filter(chat => chat.type !== 'GLOBAL')
+              .map(chat => (
+                <div
+                  key={chat.id}
+                  className={`chat-item ${
+                    activeChatId === chat.id && currentChatType !== 'ai' ? 'active' : ''
+                  }`}
+                  onClick={() => switchToChat(chat)}
+                >
+                  <div
+                    className="chat-avatar"
+                    style={{
+                      background:
+                        chat.type === 'DIRECT'
+                          ? 'linear-gradient(45deg, #10b981, #3b82f6)'
+                          : 'linear-gradient(45deg, #f97316, #ec4899)',
+                    }}
+                  >
+                    <i className={chat.type === 'DIRECT' ? 'fas fa-user' : 'fas fa-users'}></i>
+                  </div>
+                  <div className="chat-info">
+                    <div className="chat-name">{getChatDisplayName(chat)}</div>
+                    <div className="chat-preview">
+                      {chat.lastMessage?.content || 'No messages yet'}
+                    </div>
+                  </div>
+                </div>
+              ))}
+
+            {/* Online Users (show IDs) */}
+            {onlineUsers.length > 0 && (
+              <div className="user-list">
+                <div className="user-list-title">Online Users</div>
+                {onlineUsers.map(user => (
+                  <div
+                    key={user.id}
+                    className="user-item"
+                    onClick={() => startDirectChat(user.id)}
+                    role="button"
+                    tabIndex={0}
+                  >
+                    <div className="user-avatar">
+                      {user.username?.charAt(0)?.toUpperCase() || 'U'}
+                    </div>
+                    <div className="user-info">
+                      <div className="user-name">{user.name || user.username || 'Unknown User'}</div>
+                      <div className="user-id">ID: {user.id}</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+          </div>
 
         {/* Online Users */}
         {currentChatType === 'global' && (
@@ -1493,34 +2688,34 @@ export default function GetSpeak() {
       </div>
 
       <div className="chat-main">
+        {callActive && localStream && (
+          <div className="video-panel">
+            <div className="video-grid">
+              <VideoTile stream={localStream} muted label="You" />
+              {remoteStreams.map((item, index) => (
+                <VideoTile key={item.id} stream={item.stream} label={`User ${index + 1}`} />
+              ))}
+            </div>
+            <div className="call-controls">
+              <button type="button" className="call-btn danger" onClick={endCall}>
+                End Call
+              </button>
+              <span className="text-xs text-muted-foreground">
+                Room: {roomId || '--'}
+              </span>
+            </div>
+          </div>
+        )}
         <div className="chat-header">
           <div
             className="chat-header-avatar"
-            style={
-              currentChatType === 'ai'
-                ? { background: 'linear-gradient(45deg, #2575fc, #ff3366)' }
-                : currentChatType === 'global'
-                ? { background: 'linear-gradient(45deg, #6a11cb, #2575fc)' }
-                : {}
-            }
+            style={headerAvatarStyle}
           >
-            {currentChatType === 'ai' ? (
-              <i className="fas fa-robot"></i>
-            ) : currentChatType === 'global' ? (
-              <i className="fas fa-globe"></i>
-            ) : selectedChatUser ? (
-              selectedChatUser.initials
-            ) : (
-              ''
-            )}
+            <i className={headerIconClass}></i>
           </div>
           <div className="chat-header-info">
             <div className="chat-header-name">
-              {currentChatType === 'ai'
-                ? 'AI Assistant'
-                : currentChatType === 'global'
-                ? 'Global Chat'
-                : selectedChatUser?.name || 'Chat'}
+              {activeChatTitle}
             </div>
             <div className="chat-header-status">
               {currentChatType === 'global' ? (
@@ -1528,23 +2723,39 @@ export default function GetSpeak() {
                   <span className="status-dot" style={{ backgroundColor: isConnected ? '#22c55e' : '#ef4444' }} />
                   {isConnected ? 'Connected' : 'Disconnected'}
                 </>
-              ) : currentChatType === 'ai' ? (
-                <>
-                  <span className="status-dot" />
-                  Always Online
-                </>
               ) : (
                 <>
-                  <span className={`status-dot ${selectedChatUser?.online ? '' : 'offline'}`} />
-                  {selectedChatUser?.online ? 'Online' : 'Offline'}
+                  <span className="status-dot" />
+                  {currentChatType === 'ai' ? 'Always Online' : 'Private Room'}
                 </>
               )}
             </div>
           </div>
-          <div className="chat-header-actions">
-            <button type="button" title="Start Call" aria-label="Start Call"><i className="fas fa-phone"></i></button>
-            <button type="button" title="Start Video Call" aria-label="Start Video Call"><i className="fas fa-video"></i></button>
-            <button type="button" title="More Options" aria-label="More Options"><i className="fas fa-ellipsis-v"></i></button>
+        <div className="chat-header-actions">
+            <button
+              type="button"
+              title="Start Call"
+              aria-label="Start Call"
+              onClick={() => setIsCallModalOpen(true)}
+            >
+              <i className="fas fa-phone"></i>
+            </button>
+            <button
+              type="button"
+              title="Start Video Call"
+              aria-label="Start Video Call"
+              onClick={() => setIsCallModalOpen(true)}
+            >
+              <i className="fas fa-video"></i>
+            </button>
+            <button
+              type="button"
+              title="More Options"
+              aria-label="More Options"
+              onClick={handleMoreOptions}
+            >
+              <i className="fas fa-ellipsis-v"></i>
+            </button>
           </div>
         </div>
 
@@ -1557,12 +2768,17 @@ export default function GetSpeak() {
                   ? 'system'
                   : msg.type === 'bot'
                   ? 'bot'
-                  : msg.username === username
+                  : msg.senderId && authUser && msg.senderId === authUser.id
                   ? 'sent'
                   : 'received'
               }`}
             >
-              <div>{msg.content}</div>
+              <div>
+                {msg.type === 'user' && msg.senderName && msg.senderId !== authUser?.id && (
+                  <div className="message-sender">{msg.senderName}</div>
+                )}
+                {msg.content}
+              </div>
               {msg.type !== 'system' && (
                 <div className="message-time">
                   {new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
@@ -1584,25 +2800,32 @@ export default function GetSpeak() {
           <input
             type="text"
             placeholder={
-              currentChatType === 'global' && !isUsernameSet
+              currentChatType === 'ai'
+                ? 'Ask the AI...'
+                : !authUser
                 ? 'Please login to chat...'
+                : !isConnected
+                ? 'Connecting to chat...'
+                : !activeChatId
+                ? 'Select a chat...'
                 : 'Type a message...'
             }
             value={inputMessage}
             onChange={e => setInputMessage(e.target.value)}
             onKeyPress={handleKeyPress}
-            disabled={(currentChatType === 'global' && !isUsernameSet) || isTyping}
+            disabled={isInputDisabled}
           />
           <button
             onClick={sendMessage}
-            disabled={!inputMessage.trim() || (currentChatType === 'global' && !isUsernameSet) || isTyping}
+            disabled={!inputMessage.trim() || isInputDisabled}
           >
             <i className="fas fa-paper-plane"></i>
           </button>
         </div>
       </div>
-    </div>
-  )
+      </div>
+    )
+  }
 
   // Render about section
   const renderAbout = () => (
@@ -1611,13 +2834,25 @@ export default function GetSpeak() {
       <div className="info-content">
         <p>Welcome to Get Speak, the revolutionary chat application that connects you with people from all around the world. Our platform is designed to make communication easy, fun, and secure.</p>
         
-        <p>Founded in 2023, Get Speak has quickly become one of the most popular chat applications, with millions of users worldwide. Our mission is to break down barriers and bring people together through meaningful conversations.</p>
+        <p>Founded in 2026, Get Speak has quickly become one of the most popular chat applications, with millions of users worldwide. Our mission is to break down barriers and bring people together through meaningful conversations.</p>
         
         <p>Whether you&apos;re looking to make new friends, practice a new language, or simply have a casual chat, Get Speak is the perfect platform for you. With our advanced matching algorithm, you&apos;ll be connected with like-minded individuals in no time.</p>
         
         <p>At Get Speak, we value your privacy and security above all else. That&apos;s why we&apos;ve implemented state-of-the-art encryption and security measures to ensure that your conversations remain private and secure.</p>
         
-        <p>Join us today and experience the future of online communication! Developer Ganesh Baradkar.</p>
+        <p>Join us today and experience the future of online communication!</p>
+        <div className="about-developer">
+          <img
+            className="about-photo"
+            src="/developer.png"
+            alt="Developer Ganesh Baradkar"
+          />
+          <div className="about-dev-text">
+            <h3>Ganesh Baradkar</h3>
+            <div className="dev-title">Developer</div>
+            <p>Creator of Get Speak.</p>
+          </div>
+        </div>
       </div>
     </div>
   )
@@ -1669,7 +2904,7 @@ export default function GetSpeak() {
         <ul className="help-list">
           <li className="help-item">
             <div className="help-question">How do I create an account?</div>
-            <div>Creating an account is easy! Simply click on the &quot;Join Now&quot; button on the home page and enter your username. You&apos;ll be up and running in no time.</div>
+            <div>Creating an account is easy! Click &quot;Sign Up&quot; on the home page and enter your email and password.</div>
           </li>
           <li className="help-item">
             <div className="help-question">How do I start a chat with others?</div>
@@ -1719,16 +2954,28 @@ export default function GetSpeak() {
             </li>
           ))}
           <li>
-            <a
-              href="#"
-              className={activeSection === 'login' ? 'active' : ''}
-              onClick={e => {
-                e.preventDefault()
-                setActiveSection('login')
-              }}
-            >
-              Login
-            </a>
+            {authUser ? (
+              <a
+                href="#"
+                onClick={e => {
+                  e.preventDefault()
+                  handleLogout()
+                }}
+              >
+                Logout
+              </a>
+            ) : (
+              <a
+                href="#"
+                className={activeSection === 'login' ? 'active' : ''}
+                onClick={e => {
+                  e.preventDefault()
+                  setActiveSection('login')
+                }}
+              >
+                Login
+              </a>
+            )}
           </li>
         </ul>
         <div className="theme-toggle">
@@ -1778,18 +3025,6 @@ export default function GetSpeak() {
           >
             <i className="fas fa-robot"></i>
           </button>
-          <button
-            type="button"
-            className="random-chat-btn"
-            onClick={() => {
-              const randomUser = demoUsers[Math.floor(Math.random() * demoUsers.length)]
-              switchToUserChat(randomUser)
-              showNotification(`Connected with ${randomUser.name}`, 'var(--accent-color)')
-            }}
-            title="Random Chat"
-          >
-            <i className="fas fa-random"></i>
-          </button>
         </>
       )}
 
@@ -1800,6 +3035,51 @@ export default function GetSpeak() {
           style={{ backgroundColor: notification.color }}
         >
           {notification.message}
+        </div>
+      )}
+
+      {isCallModalOpen && (
+        <div className="call-modal" role="dialog" aria-modal="true">
+          <div className="call-modal-card">
+            <h3>Start a Call</h3>
+            <div className="call-option">
+              <button
+                type="button"
+                className={callMode === '1to1' ? 'active' : ''}
+                onClick={() => setCallMode('1to1')}
+              >
+                1-to-1
+              </button>
+              <button
+                type="button"
+                className={callMode === 'group' ? 'active' : ''}
+                onClick={() => setCallMode('group')}
+              >
+                Group
+              </button>
+            </div>
+            <input
+              className="call-input"
+              placeholder="Room code"
+              value={roomId}
+              onChange={(e) => setRoomId(e.target.value)}
+            />
+            <div className="call-controls">
+              <button type="button" className="call-btn" onClick={createRoomCode}>
+                Create Room Code
+              </button>
+              <button type="button" className="call-btn primary" onClick={startCall}>
+                Start {callMode === '1to1' ? '1-to-1' : 'Group'} Call
+              </button>
+              <button type="button" className="call-btn" onClick={() => setIsCallModalOpen(false)}>
+                Cancel
+              </button>
+            </div>
+            {callError && <div className="call-error">{callError}</div>}
+            <p className="text-xs text-muted-foreground">
+              Share the same room code with others to join the call.
+            </p>
+          </div>
         </div>
       )}
     </>
